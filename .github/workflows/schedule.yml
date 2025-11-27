@@ -1,8 +1,11 @@
 name: Daily Prayer Notifications Scheduler
 
 on:
+  push:
+    branches:
+      - main
   schedule:
-    - cron: "0 0 * * *" # setiap hari jam 00:00 UTC ~ 07:00 WIB
+    - cron: "0 0 * * *" # setiap hari jam 00:00 UTC (~07:00 WIB)
   workflow_dispatch:
 
 jobs:
