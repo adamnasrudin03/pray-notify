@@ -1,0 +1,25 @@
+name: Daily Prayer Notifications Scheduler
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # setiap hari jam 00:00 UTC ~ 07:00 WIB
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.20"
+
+      - name: Build
+        run: go build -o pray-notify main.go
+
+      - name: Run notify
+        env:
+          TZ: Asia/Jakarta
+        run: ./pray-notify
