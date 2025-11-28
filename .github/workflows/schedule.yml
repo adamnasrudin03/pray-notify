@@ -2,9 +2,18 @@ name: Prayer Notification Cron
 
 on:
   schedule:
-    # Action akan berjalan setiap 5 menit (misalnya, pukul 0, 5, 10, 15, ..., 55 setiap jam)
-    # Ini penting agar kode Go bisa memeriksa notifikasi dalam jendela waktu 5 menit.
-    - cron: "*/3 * * * *"
+    # Action akan berjalan setiap 3 menit (*/3)
+    # Mulai dari 03:30 WIB (20:30 UTC) hingga 19:30 WIB (12:30 UTC).
+
+    # Bagian 1: 20:30 UTC - 23:59 UTC
+    - cron: "30-59/3 20,21,22,23 * * *"
+
+    # Bagian 2a: 00:00 UTC - 11:59 UTC
+    - cron: "*/3 0-11 * * *"
+
+    # Bagian 2b: 12:00 UTC - 12:30 UTC
+    - cron: "0-30/3 12 * * *"
+
   workflow_dispatch:
     # Memungkinkan eksekusi manual dari UI GitHub
 
