@@ -4,7 +4,7 @@ on:
   schedule:
     # Action akan berjalan setiap 5 menit (misalnya, pukul 0, 5, 10, 15, ..., 55 setiap jam)
     # Ini penting agar kode Go bisa memeriksa notifikasi dalam jendela waktu 5 menit.
-    - cron: "*/5 * * * *"
+    - cron: "*/3 * * * *"
   workflow_dispatch:
     # Memungkinkan eksekusi manual dari UI GitHub
 
