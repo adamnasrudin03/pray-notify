@@ -17,15 +17,32 @@ var (
 	lon      = 106.784
 	timezone = "Asia/Jakarta"
 
-	// Pastikan ini adalah URL webhook Discord yang valid
 	webhookURL = "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix"
 )
 
-// sendWebhook mengirimkan pesan ke Discord Webhook
-func sendWebhook(message string) error {
-	// Discord menggunakan kunci "content", bukan "text"
-	payload := map[string]string{
-		"content": message,
+// sendWebhook mengirimkan pesan ke Discord Webhook menggunakan Embeds
+func sendWebhook(title, description string, embedColor int) error {
+
+	// Konfigurasi zona WIB untuk Footer
+	wibLoc := time.FixedZone("WIB", 7*3600)
+
+	// Siapkan data Embed
+	embed := map[string]interface{}{
+		"color":       embedColor,
+		"title":       title,
+		"description": description,
+		"timestamp":   time.Now().Format(time.RFC3339),
+
+		// 🚨 INFO LOKASI DITAMBAHKAN DI FOOTER
+		"footer": map[string]string{
+			"text": fmt.Sprintf("Lokasi: Kebon Jeruk, Jakarta Barat | Dihitung: %s WIB", time.Now().In(wibLoc).Format("02/01/2006 15:04")),
+		},
+	}
+
+	// Payload utama Discord Webhook
+	payload := map[string]interface{}{
+		"content": "", // Teks utama
+		"embeds":  []map[string]interface{}{embed},
 	}
 
 	body, err := json.Marshal(payload)
@@ -45,66 +62,61 @@ func sendWebhook(message string) error {
 	return nil
 }
 
-// checkAndSend notifikasi hanya jika waktunya berada dalam jendela eksekusi 5 menit terakhir.
-// offsetDuration: Negatif untuk sebelum Adzan, Positif untuk setelah Adzan.
+// checkAndSend notifikasi
 func checkAndSend(notificationTime time.Time, label string, salatTime time.Time, offsetDuration time.Duration) {
-	// Memuat lokasi Jakarta (diperlukan untuk konversi)
+
 	loc, _ := time.LoadLocation(timezone)
+	now := time.Now().In(loc) // now sekarang adalah waktu WIB
 
-	// AMBIL WAKTU SAAT INI DAN LANGSUNG KONVERSI KE WIB
-	now := time.Now().In(loc)
-
-	// Asumsi GA dijalankan setiap 5 menit. now sudah dalam WIB.
 	fiveMinutesAgo := now.Add(-5 * time.Minute)
 
-	// Tentukan apakah notifikasi ini sebelum atau sesudah Adzan
 	isBefore := offsetDuration < 0
 
-	// Gunakan time.Abs() untuk mendapatkan durasi absolut (misal: 5m, 15m)
 	absDuration := offsetDuration
 	if absDuration < 0 {
 		absDuration = -absDuration
 	}
-	absDuration = absDuration.Truncate(time.Minute) // Pastikan hanya menit
+	absDuration = absDuration.Truncate(time.Minute)
 
-	// Cek apakah waktu notifikasi berada dalam jendela 5 menit terakhir
 	if notificationTime.After(fiveMinutesAgo) && (notificationTime.Before(now) || notificationTime.Equal(now)) {
 
-		var msg string
+		var title string
+		var description string
+		var embedColor int // Warna dalam format desimal
 
 		if isBefore {
-			// --- Notifikasi Sebelum Adzan (30, 15, 5 menit) ---
 			durationUntilSalat := salatTime.Sub(now).Truncate(time.Second)
+			embedColor = 16763904 // Warna Kuning
 
 			if durationUntilSalat > 0 {
-				// Pesan saat masih ada waktu tersisa
-				msg = fmt.Sprintf("🔔 **Adzan %s** akan tiba dalam %s (Pukul %s).",
-					label,
-					durationUntilSalat.Truncate(time.Minute), // Sisa waktu
+				title = fmt.Sprintf("🕌 Adzan %s Akan Tiba!", label)
+				description = fmt.Sprintf("Waktu salat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
+					durationUntilSalat.Truncate(time.Minute),
 					salatTime.Format("15:04"),
 				)
 			} else {
-				// Pesan darurat jika GA terlambat dan waktu Adzan sudah lewat
-				msg = fmt.Sprintf("🚨 **Adzan %s** telah tiba (Pukul %s). Cepat! (Pengingat %v sebelum Adzan tertunda).",
-					label,
+				title = fmt.Sprintf("🚨 ADZAN %s TELAH TIBA!", label)
+				description = fmt.Sprintf("@here Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%v** sebelum Adzan tertunda. Segera Tunaikan Salat.",
 					salatTime.Format("15:04"),
-					absDuration, // Gunakan absDuration yang sudah di-Truncate
+					absDuration,
 				)
 			}
 
 		} else {
-			// --- Notifikasi Setelah Adzan (5, 10 menit) ---
-			msg = fmt.Sprintf("📢 **Waktu salat %s** sudah dimulai (Pukul %s). Ini adalah notifikasi %v setelah Adzan. Saatnya Tunaikan Salat.",
+			embedColor = 5814783 // Warna Hijau
+
+			title = fmt.Sprintf("✅ WAKTU SALAT %s SEDANG BERLANGSUNG", label)
+			description = fmt.Sprintf("Salat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Salat.",
 				label,
 				salatTime.Format("15:04"),
-				absDuration, // Durasi 5 atau 10 menit
+				absDuration,
 			)
 		}
 
-		if err := sendWebhook(msg); err != nil {
+		if err := sendWebhook(title, description, embedColor); err != nil {
 			fmt.Printf("❌ Error sending webhook for %s: %v\n", label, err)
 		} else {
-			fmt.Printf("✅ Sent notification for %s at %s. Type: %s.\n",
+			fmt.Printf("✅ Sent EMBED notification for %s at %s. Type: %s.\n",
 				label,
 				notificationTime.Format("15:04"),
 				func() string {
@@ -117,6 +129,7 @@ func checkAndSend(notificationTime time.Time, label string, salatTime time.Time,
 			)
 		}
 	} else {
+		// Logika SKIPPED
 		fmt.Printf(
 			"⏩ SKIPPED %s (%v %s Adzan). Waktu Adzan: %s. Waktu Notif Seharusnya: %s. Waktu Saat Ini: %s WIB.\n",
 			label,
@@ -135,16 +148,15 @@ func checkAndSend(notificationTime time.Time, label string, salatTime time.Time,
 	}
 }
 
+// ---------------------------------------------------------------------------------------
+
 func main() {
-	// sendWebhook("🚀 Prayer Notifier started.")
-	// Memuat lokasi zona waktu
 	loc, err := time.LoadLocation(timezone)
 	if err != nil {
 		fmt.Printf("Error loading timezone: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Tanggal dan waktu saat ini di zona lokal
 	today := time.Now().In(loc)
 	todayFormatted := today.Format("2006-01-02")
 
@@ -154,7 +166,6 @@ func main() {
 		Timezone:  loc,
 	}
 
-	// FIX: Gunakan Calculate dan Filter (karena CalculateByDay tidak tersedia)
 	schedules, err := prayer.Calculate(cfg, today.Year())
 	if err != nil {
 		fmt.Printf("Error calculating prayer schedule: %v\n", err)
@@ -164,7 +175,6 @@ func main() {
 	var schedule prayer.Schedule
 	found := false
 
-	// Cari jadwal hari ini
 	for _, s := range schedules {
 		if s.Date == todayFormatted {
 			schedule = s
@@ -177,9 +187,7 @@ func main() {
 		fmt.Println("Error: Today's schedule not found.")
 		os.Exit(1)
 	}
-	// END FIX
 
-	// Waktu salat lokal (menggunakan jadwal yang telah difilter)
 	fajr := schedule.Fajr.In(loc)
 	dhuhr := schedule.Zuhr.In(loc)
 	asr := schedule.Asr.In(loc)
@@ -197,22 +205,18 @@ func main() {
 		{"Isya", isha},
 	}
 
-	// Jangka waktu notifikasi. Negatif (-) untuk SEBELUM, Positif (+) untuk SETELAH.
 	offsets := []time.Duration{
-		-30 * time.Minute, // 30 menit sebelum
-		-15 * time.Minute, // 15 menit sebelum
-		-5 * time.Minute,  // 5 menit sebelum
-		5 * time.Minute,   // 5 menit setelah (BARU)
-		10 * time.Minute,  // 10 menit setelah (BARU)
+		-30 * time.Minute,
+		-15 * time.Minute,
+		-5 * time.Minute,
+		5 * time.Minute,
+		10 * time.Minute,
+		15 * time.Minute,
 	}
 
-	// Jadwalkan dan kirim notifikasi jika waktunya tepat
 	for _, prayer := range prayerTimes {
 		for _, offset := range offsets {
-			// notificationTime = WaktuSalat + offset (bisa negatif atau positif)
 			notificationTime := prayer.t.Add(offset)
-
-			// checkAndSend menerima offset Duration (termasuk tanda +/-)
 			checkAndSend(notificationTime, prayer.label, prayer.t, offset)
 		}
 	}
