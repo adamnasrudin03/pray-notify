@@ -11,10 +11,11 @@ import (
 	"github.com/hablullah/go-prayer"
 )
 
-// Struktur baru untuk menyimpan URL dan Nama/Label Webhook
+// Struktur baru untuk menyimpan URL, Nama/Label Webhook, dan Mentions CC
 type WebhookTarget struct {
-	Name string
-	URL  string
+	Name     string
+	URL      string
+	Mentions string // Field baru untuk CC (@user @user)
 }
 
 var (
@@ -23,10 +24,18 @@ var (
 	lon      = 106.784
 	timezone = "Asia/Jakarta"
 
-	// Daftar Webhook Target
+	// Daftar Webhook Target yang Diperbarui dengan Mentions
 	webhookTargets = []WebhookTarget{
-		{"Divisi IT", "https://discord.com/api/webhooks/1443879495324008488/z-jzPBXv6vBvE45-QFrV-wwcIp8Qz9GtMw0bSQeKh1ltjHXZjcUPmjN3pMpS7Jg4yZJ0"},
-		{"Apran Channel", "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix"},
+		{
+			Name:     "Divisi IT",
+			URL:      "https://discord.com/api/webhooks/1443879495324008488/z-jzPBXv6vBvE45-QFrV-wwcIp8Qz9GtMw0bSQeKh1ltjHXZjcUPmjN3pMpS7Jg4yZJ0",
+			Mentions: "@abi_lp @tedja_putra_lp @ade_muhammad_lp @bian_kusumah_lp", // CC hanya untuk Divisi IT
+		},
+		{
+			Name:     "Apran Channel",
+			URL:      "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix",
+			Mentions: "", // Tidak ada CC untuk channel ini
+		},
 		// Tambahkan webhook lain di sini
 	}
 )
@@ -44,7 +53,7 @@ func sendWebhook(title, description string, embedColor int) []WebhookResult {
 	results := []WebhookResult{}
 	wibLoc := time.FixedZone("WIB", 7*3600)
 
-	// Siapkan data Embed
+	// Siapkan data Embed (Payload ini akan sama untuk semua target)
 	embed := map[string]interface{}{
 		"color":       embedColor,
 		"title":       title,
@@ -55,31 +64,35 @@ func sendWebhook(title, description string, embedColor int) []WebhookResult {
 		},
 	}
 
-	// Payload utama Discord Webhook
-	payload := map[string]interface{}{
-		"content": "",
-		"embeds":  []map[string]interface{}{embed},
-	}
-
-	body, err := json.Marshal(payload)
-	if err != nil {
-		// Jika gagal marshal, semua pengiriman gagal
-		for _, target := range webhookTargets {
-			results = append(results, WebhookResult{Name: target.Name, Error: fmt.Errorf("marshalling failed: %w", err)})
-		}
-		return results
-	}
-
 	// Loop melalui semua target webhook
 	for _, target := range webhookTargets {
-		resp, err := http.Post(target.URL, "application/json", bytes.NewBuffer(body))
+
+		// 🔥 MODIFIKASI: Buat payload baru di dalam loop untuk menyesuaikan content
+		payload := map[string]interface{}{
+			// Masukkan Mentions di sini. Jika kosong, content akan kosong.
+			"content": target.Mentions,
+			"embeds":  []map[string]interface{}{embed},
+		}
+
+		body, err := json.Marshal(payload)
 
 		result := WebhookResult{Name: target.Name}
 
 		if err != nil {
+			result.Error = fmt.Errorf("marshalling failed: %w", err)
+			results = append(results, result)
+			continue // Lanjut ke target berikutnya jika marshalling gagal
+		}
+
+		resp, err := http.Post(target.URL, "application/json", bytes.NewBuffer(body))
+
+		if err != nil {
 			result.Error = fmt.Errorf("HTTP post failed: %w", err)
 		} else {
-			defer resp.Body.Close()
+			// Perhatian: defer resp.Body.Close() tidak bisa digunakan di dalam loop,
+			// atau harus ditangani secara eksplisit. Untuk kesederhanaan, kita akan tetap
+			// memanggilnya langsung karena Go akan membersihkan sumber daya.
+			resp.Body.Close()
 			if resp.StatusCode >= 300 {
 				result.Error = fmt.Errorf("status code %d", resp.StatusCode)
 			}
@@ -90,7 +103,7 @@ func sendWebhook(title, description string, embedColor int) []WebhookResult {
 	return results
 }
 
-// checkAndSend notifikasi
+// checkAndSend notifikasi (Tidak ada perubahan pada logika ini)
 func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time, offsetDuration time.Duration) {
 
 	loc, _ := time.LoadLocation(timezone)
@@ -118,13 +131,13 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 			if durationUntilShalat > 0 {
 				title = fmt.Sprintf("🕌 Adzan %s Akan Tiba!", label)
-				description = fmt.Sprintf("@here Waktu Shalat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
+				description = fmt.Sprintf("Waktu Shalat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
 					durationUntilShalat.Truncate(time.Minute),
 					shalatTime.Format("15:04"),
 				)
 			} else {
 				title = fmt.Sprintf("🚨 ADZAN %s TELAH TIBA!", label)
-				description = fmt.Sprintf("@here Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%v** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
+				description = fmt.Sprintf("Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%v** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
 					shalatTime.Format("15:04"),
 					absDuration,
 				)
@@ -134,7 +147,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 			embedColor = 5814783 // Warna Hijau
 
 			title = fmt.Sprintf("✅ WAKTU SALAT %s SEDANG BERLANGSUNG", label)
-			description = fmt.Sprintf("@here Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
+			description = fmt.Sprintf("Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
 				label,
 				shalatTime.Format("15:04"),
 				absDuration,
@@ -189,6 +202,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 // ---------------------------------------------------------------------------------------
 
 func main() {
+	// ... (Sisa fungsi main tetap sama) ...
 	loc, err := time.LoadLocation(timezone)
 	if err != nil {
 		fmt.Printf("Error loading timezone: %v\n", err)
@@ -243,8 +257,6 @@ func main() {
 		{"Isya", isha},
 	}
 
-	// Anda telah menambahkan 15m dan 30m setelah Adzan di permintaan sebelumnya,
-	// saya biarkan di sini, pastikan notifikasi yang diinginkan sudah pas.
 	offsets := []time.Duration{
 		-30 * time.Minute,
 		-20 * time.Minute,
