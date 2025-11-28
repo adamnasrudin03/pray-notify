@@ -25,10 +25,7 @@ jobs:
 
       - name: Run Prayer Notifier
         run: ./prayer-notifier
-
-        # Optional: Jika Anda ingin menggunakan GitHub Secrets untuk webhook,
-        # ganti baris run di atas dengan:
-        # run: ./prayer-notifier
-        # env:
-        #   WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        # Dan ubah kode Go Anda untuk membaca URL dari environment variable.
+        # Biarkan bagian env di sini kosong atau gunakan saja secrets yang sudah ada.
+        # Karena kita akan membaca SEMUA environment variable dari sistem OS.
+        # Anda hanya perlu memastikan secrets ini didefinisikan di GitHub:
+        # WEBHOOK_URL_UMUM, WEBHOOK_URL_APRAN, WEBHOOK_URL_LAIN, dst.
