@@ -257,16 +257,9 @@ func main() {
 		{"Isya", isha},
 	}
 
-	offsets := []time.Duration{
-		-30 * time.Minute,
-		-20 * time.Minute,
-		-15 * time.Minute,
-		-5 * time.Minute,
-		5 * time.Minute,
-		10 * time.Minute,
-		15 * time.Minute,
-		20 * time.Minute,
-		30 * time.Minute,
+	offsets := []time.Duration{}
+	for m := -20; m <= 5; m++ {
+		offsets = append(offsets, time.Duration(m)*time.Minute)
 	}
 
 	for _, prayer := range prayerTimes {
