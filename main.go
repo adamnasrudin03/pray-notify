@@ -48,8 +48,13 @@ func sendWebhook(message string) error {
 // checkAndSend notifikasi hanya jika waktunya berada dalam jendela eksekusi 5 menit terakhir.
 // offsetDuration: Negatif untuk sebelum Adzan, Positif untuk setelah Adzan.
 func checkAndSend(notificationTime time.Time, label string, salatTime time.Time, offsetDuration time.Duration) {
-	now := time.Now()
-	// Asumsi GA dijalankan setiap 5 menit
+	// Memuat lokasi Jakarta (diperlukan untuk konversi)
+	loc, _ := time.LoadLocation(timezone)
+
+	// AMBIL WAKTU SAAT INI DAN LANGSUNG KONVERSI KE WIB
+	now := time.Now().In(loc)
+
+	// Asumsi GA dijalankan setiap 5 menit. now sudah dalam WIB.
 	fiveMinutesAgo := now.Add(-5 * time.Minute)
 
 	// Tentukan apakah notifikasi ini sebelum atau sesudah Adzan
@@ -112,22 +117,20 @@ func checkAndSend(notificationTime time.Time, label string, salatTime time.Time,
 			)
 		}
 	} else {
-		// --- Custom Debug Log (Skipped) ---
-		// Pesan yang lebih informatif (sesuai permintaan sebelumnya)
 		fmt.Printf(
-			"⏩ SKIPPED %s (%v %s Adzan). Waktu Adzan: %s. Waktu Notif Seharusnya: %s. Waktu Saat Ini: %s.\n",
+			"⏩ SKIPPED %s (%v %s Adzan). Waktu Adzan: %s. Waktu Notif Seharusnya: %s. Waktu Saat Ini: %s WIB.\n",
 			label,
-			absDuration, // Durasi Notifikasi (5m, 10m, dst)
+			absDuration,
 			func() string {
 				if isBefore {
 					return "SEBELUM"
 				} else {
 					return "SETELAH"
 				}
-			}(), // Label Sebelum/Setelah
-			salatTime.Format("15:04"),           // Waktu Salat
-			notificationTime.Format("15:04:05"), // Waktu Notifikasi yang dijadwalkan
-			now.Format("15:04:05"),              // Waktu Eksekusi GA saat ini
+			}(),
+			salatTime.Format("15:04"),
+			notificationTime.Format("15:04:05"),
+			now.Format("15:04:05"),
 		)
 	}
 }
