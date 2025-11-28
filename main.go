@@ -52,14 +52,18 @@ func checkAndSend(notificationTime time.Time, label string, salatTime time.Time,
 	// Asumsi GA dijalankan setiap 5 menit
 	fiveMinutesAgo := now.Add(-5 * time.Minute)
 
+	// Tentukan apakah notifikasi ini sebelum atau sesudah Adzan
+	isBefore := offsetDuration < 0
+
+	// Gunakan time.Abs() untuk mendapatkan durasi absolut (misal: 5m, 15m)
+	absDuration := offsetDuration
+	if absDuration < 0 {
+		absDuration = -absDuration
+	}
+	absDuration = absDuration.Truncate(time.Minute) // Pastikan hanya menit
+
 	// Cek apakah waktu notifikasi berada dalam jendela 5 menit terakhir
 	if notificationTime.After(fiveMinutesAgo) && (notificationTime.Before(now) || notificationTime.Equal(now)) {
-
-		isBefore := offsetDuration < 0
-		absDuration := offsetDuration
-		if isBefore {
-			absDuration = -offsetDuration // Jadikan positif untuk ditampilkan
-		}
 
 		var msg string
 
@@ -71,15 +75,15 @@ func checkAndSend(notificationTime time.Time, label string, salatTime time.Time,
 				// Pesan saat masih ada waktu tersisa
 				msg = fmt.Sprintf("🔔 **Adzan %s** akan tiba dalam %s (Pukul %s).",
 					label,
-					durationUntilSalat.Truncate(time.Minute),
+					durationUntilSalat.Truncate(time.Minute), // Sisa waktu
 					salatTime.Format("15:04"),
 				)
 			} else {
 				// Pesan darurat jika GA terlambat dan waktu Adzan sudah lewat
-				msg = fmt.Sprintf("🚨 **Adzan %s** telah tiba (Pukul %s). Cepat! (Pengingat %s sebelum Adzan tertunda).",
+				msg = fmt.Sprintf("🚨 **Adzan %s** telah tiba (Pukul %s). Cepat! (Pengingat %v sebelum Adzan tertunda).",
 					label,
 					salatTime.Format("15:04"),
-					absDuration.Truncate(time.Minute),
+					absDuration, // Gunakan absDuration yang sudah di-Truncate
 				)
 			}
 
@@ -88,7 +92,7 @@ func checkAndSend(notificationTime time.Time, label string, salatTime time.Time,
 			msg = fmt.Sprintf("📢 **Waktu salat %s** sudah dimulai (Pukul %s). Ini adalah notifikasi %v setelah Adzan. Saatnya Tunaikan Salat.",
 				label,
 				salatTime.Format("15:04"),
-				absDuration.Truncate(time.Minute), // Durasi 5 atau 10 menit
+				absDuration, // Durasi 5 atau 10 menit
 			)
 		}
 
@@ -108,8 +112,23 @@ func checkAndSend(notificationTime time.Time, label string, salatTime time.Time,
 			)
 		}
 	} else {
-		// Logika ini berguna untuk debugging, bisa dihilangkan
-		fmt.Printf("⏩ Skipping %s notif at %s. Current time: %s.\n", label, notificationTime.Format("15:04"), now.Format("15:04:05"))
+		// --- Custom Debug Log (Skipped) ---
+		// Pesan yang lebih informatif (sesuai permintaan sebelumnya)
+		fmt.Printf(
+			"⏩ SKIPPED %s (%v %s Adzan). Waktu Adzan: %s. Waktu Notif Seharusnya: %s. Waktu Saat Ini: %s.\n",
+			label,
+			absDuration, // Durasi Notifikasi (5m, 10m, dst)
+			func() string {
+				if isBefore {
+					return "SEBELUM"
+				} else {
+					return "SETELAH"
+				}
+			}(), // Label Sebelum/Setelah
+			salatTime.Format("15:04"),           // Waktu Salat
+			notificationTime.Format("15:04:05"), // Waktu Notifikasi yang dijadwalkan
+			now.Format("15:04:05"),              // Waktu Eksekusi GA saat ini
+		)
 	}
 }
 
