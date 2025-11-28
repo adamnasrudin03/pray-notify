@@ -200,7 +200,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		if label == "Dhuha" {
 			embedColor = 16763904 // Warna Kuning/Emas untuk Sunnah
 			mainTitle = "✨ WAKTU SHALAT DHUHA DIMULAI!"
-			mainDescription = fmt.Sprintf("Shalat Dhuha sudah dapat ditunaikan mulai Pukul **%s**. Mari raih keutamaan sunnah untuk kelancaran rezeki dan aktivitas harian.", shalatTime.Format("15:04"))
+			mainDescription = fmt.Sprintf("📢 @here, Shalat Dhuha sudah dapat ditunaikan mulai Pukul **%s**. Mari raih keutamaan sunnah untuk kelancaran rezeki dan aktivitas harian.", shalatTime.Format("15:04"))
 
 		} else if isBefore {
 			durationUntilShalat := shalatTime.Sub(now).Truncate(time.Second)
@@ -208,13 +208,13 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 			if durationUntilShalat > 0 {
 				mainTitle = fmt.Sprintf("🕌 Adzan %s Akan Tiba!", label)
-				mainDescription = fmt.Sprintf("Waktu Shalat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
+				mainDescription = fmt.Sprintf("📢 @here, Waktu Shalat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
 					durationUntilShalat.Truncate(time.Minute),
 					shalatTime.Format("15:04"),
 				)
 			} else {
 				mainTitle = fmt.Sprintf("🚨 ADZAN %s TELAH TIBA (Delayed)!", label)
-				mainDescription = fmt.Sprintf("Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%v** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
+				mainDescription = fmt.Sprintf("📢 @here, Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%v** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
 					shalatTime.Format("15:04"),
 					absDuration,
 				)
@@ -225,13 +225,13 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 			if isExactlyTime {
 				mainTitle = fmt.Sprintf("📢 WAKTU ADZAN %s", label)
-				mainDescription = fmt.Sprintf("Adzan %s baru saja berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
+				mainDescription = fmt.Sprintf("📢 @here, Adzan %s baru saja berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
 					label,
 					shalatTime.Format("15:04"),
 				)
 			} else { // isAfter
-				mainTitle = fmt.Sprintf("✅ WAKTU SALAT %s SEDANG BERLANGSUNG", label)
-				mainDescription = fmt.Sprintf("Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
+				mainTitle = fmt.Sprintf("✅ WAKTU SHALAT %s SEDANG BERLANGSUNG", label)
+				mainDescription = fmt.Sprintf("📢 @here,Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
 					label,
 					shalatTime.Format("15:04"),
 					absDuration,
