@@ -5,59 +5,126 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/hablullah/go-prayer"
 )
 
 var (
-	// koordinat Kebon Jeruk, Jakarta Barat
+	// Koordinat Kebon Jeruk, Jakarta Barat
 	lat      = -6.183
 	lon      = 106.784
 	timezone = "Asia/Jakarta"
 
+	// Pastikan ini adalah URL webhook Discord yang valid
 	webhookURL = "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix"
 )
 
+// sendWebhook mengirimkan pesan ke Discord Webhook
 func sendWebhook(message string) error {
+	// Discord menggunakan kunci "content", bukan "text"
 	payload := map[string]string{
-		"text": message,
+		"content": message,
 	}
-	body, _ := json.Marshal(payload)
-	resp, err := http.Post(webhookURL, "application/json", bytes.NewReader(body))
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("error marshalling payload: %w", err)
+	}
+
+	resp, err := http.Post(webhookURL, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("webhook returned %d", resp.StatusCode)
+		return fmt.Errorf("webhook returned non-success status: %d", resp.StatusCode)
 	}
 	return nil
 }
 
-func scheduleNotification(t time.Time, label string) {
+// checkAndSend notifikasi hanya jika waktunya berada dalam jendela eksekusi 5 menit terakhir.
+// offsetDuration: Negatif untuk sebelum Adzan, Positif untuk setelah Adzan.
+func checkAndSend(notificationTime time.Time, label string, salatTime time.Time, offsetDuration time.Duration) {
 	now := time.Now()
-	diff := t.Sub(now)
-	if diff <= 0 {
-		fmt.Printf("Skipped %s — time already passed: %v\n", label, t)
-		return
-	}
+	// Asumsi GA dijalankan setiap 5 menit
+	fiveMinutesAgo := now.Add(-5 * time.Minute)
 
-	go func() {
-		timer := time.NewTimer(diff)
-		<-timer.C
-		msg := fmt.Sprintf("Adzan %s akan segera (%s)", label, t.Format("15:04"))
-		if err := sendWebhook(msg); err != nil {
-			fmt.Printf("Error sending webhook: %v\n", err)
-		} else {
-			fmt.Printf("Sent notification for %s\n", label)
+	// Cek apakah waktu notifikasi berada dalam jendela 5 menit terakhir
+	if notificationTime.After(fiveMinutesAgo) && (notificationTime.Before(now) || notificationTime.Equal(now)) {
+
+		isBefore := offsetDuration < 0
+		absDuration := offsetDuration
+		if isBefore {
+			absDuration = -offsetDuration // Jadikan positif untuk ditampilkan
 		}
-	}()
+
+		var msg string
+
+		if isBefore {
+			// --- Notifikasi Sebelum Adzan (30, 15, 5 menit) ---
+			durationUntilSalat := salatTime.Sub(now).Truncate(time.Second)
+
+			if durationUntilSalat > 0 {
+				// Pesan saat masih ada waktu tersisa
+				msg = fmt.Sprintf("🔔 **Adzan %s** akan tiba dalam %s (Pukul %s).",
+					label,
+					durationUntilSalat.Truncate(time.Minute),
+					salatTime.Format("15:04"),
+				)
+			} else {
+				// Pesan darurat jika GA terlambat dan waktu Adzan sudah lewat
+				msg = fmt.Sprintf("🚨 **Adzan %s** telah tiba (Pukul %s). Cepat! (Pengingat %s sebelum Adzan tertunda).",
+					label,
+					salatTime.Format("15:04"),
+					absDuration.Truncate(time.Minute),
+				)
+			}
+
+		} else {
+			// --- Notifikasi Setelah Adzan (5, 10 menit) ---
+			msg = fmt.Sprintf("📢 **Waktu salat %s** sudah dimulai (Pukul %s). Ini adalah notifikasi %v setelah Adzan. Saatnya Tunaikan Salat.",
+				label,
+				salatTime.Format("15:04"),
+				absDuration.Truncate(time.Minute), // Durasi 5 atau 10 menit
+			)
+		}
+
+		if err := sendWebhook(msg); err != nil {
+			fmt.Printf("❌ Error sending webhook for %s: %v\n", label, err)
+		} else {
+			fmt.Printf("✅ Sent notification for %s at %s. Type: %s.\n",
+				label,
+				notificationTime.Format("15:04"),
+				func() string {
+					if isBefore {
+						return "SEBELUM"
+					} else {
+						return "SETELAH"
+					}
+				}(),
+			)
+		}
+	} else {
+		// Logika ini berguna untuk debugging, bisa dihilangkan
+		fmt.Printf("⏩ Skipping %s notif at %s. Current time: %s.\n", label, notificationTime.Format("15:04"), now.Format("15:04:05"))
+	}
 }
 
 func main() {
-	loc, _ := time.LoadLocation(timezone)
-	year := time.Now().Year()
+	// sendWebhook("🚀 Prayer Notifier started.")
+	// Memuat lokasi zona waktu
+	loc, err := time.LoadLocation(timezone)
+	if err != nil {
+		fmt.Printf("Error loading timezone: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Tanggal dan waktu saat ini di zona lokal
+	today := time.Now().In(loc)
+	todayFormatted := today.Format("2006-01-02")
 
 	cfg := prayer.Config{
 		Latitude:  lat,
@@ -65,42 +132,66 @@ func main() {
 		Timezone:  loc,
 	}
 
-	schedules, err := prayer.Calculate(cfg, year)
+	// FIX: Gunakan Calculate dan Filter (karena CalculateByDay tidak tersedia)
+	schedules, err := prayer.Calculate(cfg, today.Year())
 	if err != nil {
-		panic(err)
+		fmt.Printf("Error calculating prayer schedule: %v\n", err)
+		os.Exit(1)
 	}
+
+	var schedule prayer.Schedule
+	found := false
 
 	// Cari jadwal hari ini
-	today := time.Now().Format("2006-01-02")
-
 	for _, s := range schedules {
-		if s.Date != today {
-			continue
-		}
-
-		// Waktu salat lokal
-		fajr := s.Fajr.In(loc)
-		dhuhr := s.Zuhr.In(loc)
-		asr := s.Asr.In(loc)
-		maghrib := s.Maghrib.In(loc)
-		isha := s.Isha.In(loc)
-
-		// Schedule 30, 15, 5 menit sebelum tiap salat
-		for _, item := range []struct {
-			label string
-			t     time.Time
-		}{
-			{"Subuh", fajr},
-			{"Dzuhur", dhuhr},
-			{"Ashar", asr},
-			{"Maghrib", maghrib},
-			{"Isya", isha},
-		} {
-			scheduleNotification(item.t.Add(-30*time.Minute), item.label)
-			scheduleNotification(item.t.Add(-15*time.Minute), item.label)
-			scheduleNotification(item.t.Add(-5*time.Minute), item.label)
+		if s.Date == todayFormatted {
+			schedule = s
+			found = true
+			break
 		}
 	}
 
-	select {} // keep program running sampai semua timer selesai
+	if !found {
+		fmt.Println("Error: Today's schedule not found.")
+		os.Exit(1)
+	}
+	// END FIX
+
+	// Waktu salat lokal (menggunakan jadwal yang telah difilter)
+	fajr := schedule.Fajr.In(loc)
+	dhuhr := schedule.Zuhr.In(loc)
+	asr := schedule.Asr.In(loc)
+	maghrib := schedule.Maghrib.In(loc)
+	isha := schedule.Isha.In(loc)
+
+	prayerTimes := []struct {
+		label string
+		t     time.Time
+	}{
+		{"Subuh", fajr},
+		{"Dzuhur", dhuhr},
+		{"Ashar", asr},
+		{"Maghrib", maghrib},
+		{"Isya", isha},
+	}
+
+	// Jangka waktu notifikasi. Negatif (-) untuk SEBELUM, Positif (+) untuk SETELAH.
+	offsets := []time.Duration{
+		-30 * time.Minute, // 30 menit sebelum
+		-15 * time.Minute, // 15 menit sebelum
+		-5 * time.Minute,  // 5 menit sebelum
+		5 * time.Minute,   // 5 menit setelah (BARU)
+		10 * time.Minute,  // 10 menit setelah (BARU)
+	}
+
+	// Jadwalkan dan kirim notifikasi jika waktunya tepat
+	for _, prayer := range prayerTimes {
+		for _, offset := range offsets {
+			// notificationTime = WaktuSalat + offset (bisa negatif atau positif)
+			notificationTime := prayer.t.Add(offset)
+
+			// checkAndSend menerima offset Duration (termasuk tanda +/-)
+			checkAndSend(notificationTime, prayer.label, prayer.t, offset)
+		}
+	}
 }
