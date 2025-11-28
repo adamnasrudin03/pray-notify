@@ -48,7 +48,7 @@ var (
 		{
 			Name:     "Divisi IT",
 			URL:      "https://discord.com/api/webhooks/1443879495324008488/z-jzPBXv6vBvE45-QFrV-wwcIp8Qz9GtMw0bSQeKh1ltjHXZjcUPmjN3pMpS7Jg4yZJ0",
-			Mentions: "@abi_lp @tedja_putra_lp @ade_muhammad_lp @bian_kusumah_lp",
+			Mentions: "@abi_lp @tedja_putra_lp @ade_muhammad_lp @bian_kusumah_lp @arifinmz29",
 		},
 		{
 			Name:     "Apran Channel",
@@ -215,13 +215,13 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 			// Logika untuk Saat Adzan dan Setelah Adzan
 			if isExactlyAdzan {
 				mainTitle = fmt.Sprintf("📢 WAKTU ADZAN %s", label)
-				mainDescription = fmt.Sprintf("Adzan %s baru saja berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
+				mainDescription = fmt.Sprintf("🔊 @here, Adzan %s baru saja berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
 					label,
 					shalatTime.Format("15:04"),
 				)
 			} else { // isAfter
-				mainTitle = fmt.Sprintf("✅ WAKTU SALAT %s SEDANG BERLANGSUNG", label)
-				mainDescription = fmt.Sprintf("Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
+				mainTitle = fmt.Sprintf("✅ WAKTU SHALAT %s SEDANG BERLANGSUNG", label)
+				mainDescription = fmt.Sprintf("🔊 @here, Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
 					label,
 					shalatTime.Format("15:04"),
 					absDuration,
