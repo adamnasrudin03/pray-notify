@@ -91,7 +91,7 @@ func sendWebhook(title, description string, embedColor int) []WebhookResult {
 }
 
 // checkAndSend notifikasi
-func checkAndSend(notificationTime time.Time, label string, salatTime time.Time, offsetDuration time.Duration) {
+func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time, offsetDuration time.Duration) {
 
 	loc, _ := time.LoadLocation(timezone)
 	now := time.Now().In(loc) // now sekarang adalah waktu WIB
@@ -113,19 +113,19 @@ func checkAndSend(notificationTime time.Time, label string, salatTime time.Time,
 		var embedColor int // Warna dalam format desimal
 
 		if isBefore {
-			durationUntilSalat := salatTime.Sub(now).Truncate(time.Second)
+			durationUntilShalat := shalatTime.Sub(now).Truncate(time.Second)
 			embedColor = 16763904 // Warna Kuning
 
-			if durationUntilSalat > 0 {
+			if durationUntilShalat > 0 {
 				title = fmt.Sprintf("🕌 Adzan %s Akan Tiba!", label)
-				description = fmt.Sprintf("Waktu salat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
-					durationUntilSalat.Truncate(time.Minute),
-					salatTime.Format("15:04"),
+				description = fmt.Sprintf("@here Waktu Shalat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
+					durationUntilShalat.Truncate(time.Minute),
+					shalatTime.Format("15:04"),
 				)
 			} else {
 				title = fmt.Sprintf("🚨 ADZAN %s TELAH TIBA!", label)
-				description = fmt.Sprintf("@here Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%v** sebelum Adzan tertunda. Segera Tunaikan Salat.",
-					salatTime.Format("15:04"),
+				description = fmt.Sprintf("@here Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%v** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
+					shalatTime.Format("15:04"),
 					absDuration,
 				)
 			}
@@ -134,9 +134,9 @@ func checkAndSend(notificationTime time.Time, label string, salatTime time.Time,
 			embedColor = 5814783 // Warna Hijau
 
 			title = fmt.Sprintf("✅ WAKTU SALAT %s SEDANG BERLANGSUNG", label)
-			description = fmt.Sprintf("Salat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Salat.",
+			description = fmt.Sprintf("@here Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
 				label,
-				salatTime.Format("15:04"),
+				shalatTime.Format("15:04"),
 				absDuration,
 			)
 		}
@@ -179,7 +179,7 @@ func checkAndSend(notificationTime time.Time, label string, salatTime time.Time,
 					return "SETELAH"
 				}
 			}(),
-			salatTime.Format("15:04"),
+			shalatTime.Format("15:04"),
 			notificationTime.Format("15:04:05"),
 			now.Format("15:04:05"),
 		)
@@ -247,11 +247,13 @@ func main() {
 	// saya biarkan di sini, pastikan notifikasi yang diinginkan sudah pas.
 	offsets := []time.Duration{
 		-30 * time.Minute,
+		-20 * time.Minute,
 		-15 * time.Minute,
 		-5 * time.Minute,
 		5 * time.Minute,
 		10 * time.Minute,
 		15 * time.Minute,
+		20 * time.Minute,
 		30 * time.Minute,
 	}
 
