@@ -11,19 +11,37 @@ import (
 	"github.com/hablullah/go-prayer"
 )
 
+// Struktur baru untuk menyimpan URL dan Nama/Label Webhook
+type WebhookTarget struct {
+	Name string
+	URL  string
+}
+
 var (
 	// Koordinat Kebon Jeruk, Jakarta Barat
 	lat      = -6.183
 	lon      = 106.784
 	timezone = "Asia/Jakarta"
 
-	webhookURL = "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix"
+	// Daftar Webhook Target
+	webhookTargets = []WebhookTarget{
+		{"Divisi IT", "https://discord.com/api/webhooks/1443879495324008488/z-jzPBXv6vBvE45-QFrV-wwcIp8Qz9GtMw0bSQeKh1ltjHXZjcUPmjN3pMpS7Jg4yZJ0"},
+		{"Apran Channel", "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix"},
+		// Tambahkan webhook lain di sini
+	}
 )
 
-// sendWebhook mengirimkan pesan ke Discord Webhook menggunakan Embeds
-func sendWebhook(title, description string, embedColor int) error {
+// WebhookResult menyimpan hasil pengiriman ke satu webhook
+type WebhookResult struct {
+	Name  string
+	Error error
+}
 
-	// Konfigurasi zona WIB untuk Footer
+// sendWebhook mengirimkan pesan ke semua WebhookTarget
+// Mengembalikan slice dari hasil pengiriman (berhasil atau gagal)
+func sendWebhook(title, description string, embedColor int) []WebhookResult {
+
+	results := []WebhookResult{}
 	wibLoc := time.FixedZone("WIB", 7*3600)
 
 	// Siapkan data Embed
@@ -32,8 +50,6 @@ func sendWebhook(title, description string, embedColor int) error {
 		"title":       title,
 		"description": description,
 		"timestamp":   time.Now().Format(time.RFC3339),
-
-		// 🚨 INFO LOKASI DITAMBAHKAN DI FOOTER
 		"footer": map[string]string{
 			"text": fmt.Sprintf("Lokasi: Kebon Jeruk, Jakarta Barat | Dihitung: %s WIB", time.Now().In(wibLoc).Format("02/01/2006 15:04")),
 		},
@@ -41,25 +57,37 @@ func sendWebhook(title, description string, embedColor int) error {
 
 	// Payload utama Discord Webhook
 	payload := map[string]interface{}{
-		"content": "", // Teks utama
+		"content": "",
 		"embeds":  []map[string]interface{}{embed},
 	}
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("error marshalling payload: %w", err)
+		// Jika gagal marshal, semua pengiriman gagal
+		for _, target := range webhookTargets {
+			results = append(results, WebhookResult{Name: target.Name, Error: fmt.Errorf("marshalling failed: %w", err)})
+		}
+		return results
 	}
 
-	resp, err := http.Post(webhookURL, "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+	// Loop melalui semua target webhook
+	for _, target := range webhookTargets {
+		resp, err := http.Post(target.URL, "application/json", bytes.NewBuffer(body))
 
-	if resp.StatusCode >= 300 {
-		return fmt.Errorf("webhook returned non-success status: %d", resp.StatusCode)
+		result := WebhookResult{Name: target.Name}
+
+		if err != nil {
+			result.Error = fmt.Errorf("HTTP post failed: %w", err)
+		} else {
+			defer resp.Body.Close()
+			if resp.StatusCode >= 300 {
+				result.Error = fmt.Errorf("status code %d", resp.StatusCode)
+			}
+		}
+		results = append(results, result)
 	}
-	return nil
+
+	return results
 }
 
 // checkAndSend notifikasi
@@ -113,10 +141,12 @@ func checkAndSend(notificationTime time.Time, label string, salatTime time.Time,
 			)
 		}
 
-		if err := sendWebhook(title, description, embedColor); err != nil {
-			fmt.Printf("❌ Error sending webhook for %s: %v\n", label, err)
-		} else {
-			fmt.Printf("✅ Sent EMBED notification for %s at %s. Type: %s.\n",
+		// Panggil sendWebhook dan terima hasilnya
+		results := sendWebhook(title, description, embedColor)
+
+		// Log hasil pengiriman untuk setiap webhook
+		for _, result := range results {
+			logMessage := fmt.Sprintf("%s at %s. Type: %s. Webhook: %s",
 				label,
 				notificationTime.Format("15:04"),
 				func() string {
@@ -126,8 +156,16 @@ func checkAndSend(notificationTime time.Time, label string, salatTime time.Time,
 						return "SETELAH"
 					}
 				}(),
+				result.Name, // Nama Webhook
 			)
+
+			if result.Error != nil {
+				fmt.Printf("❌ Error sending EMBED notification for %s. Error: %v\n", logMessage, result.Error)
+			} else {
+				fmt.Printf("✅ Sent EMBED notification for %s.\n", logMessage)
+			}
 		}
+
 	} else {
 		// Logika SKIPPED
 		fmt.Printf(
@@ -205,6 +243,8 @@ func main() {
 		{"Isya", isha},
 	}
 
+	// Anda telah menambahkan 15m dan 30m setelah Adzan di permintaan sebelumnya,
+	// saya biarkan di sini, pastikan notifikasi yang diinginkan sudah pas.
 	offsets := []time.Duration{
 		-30 * time.Minute,
 		-15 * time.Minute,
@@ -212,6 +252,7 @@ func main() {
 		5 * time.Minute,
 		10 * time.Minute,
 		15 * time.Minute,
+		30 * time.Minute,
 	}
 
 	for _, prayer := range prayerTimes {
