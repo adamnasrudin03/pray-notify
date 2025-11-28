@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-
-	// 🔥 TAMBAH: Untuk fungsi random
-	"math/rand"
 
 	"github.com/hablullah/go-prayer"
 )
@@ -38,9 +36,9 @@ type Quote struct {
 }
 
 var (
-	// Koordinat Kebon Jeruk, Jakarta Barat
-	lat      = -6.183
-	lon      = 106.784
+	// Koordinat Lion Parcel Kedoya, Kebon Jeruk, Jakarta Barat
+	lat      = -6.189541191231946
+	lon      = 106.76490428724479
 	timezone = "Asia/Jakarta"
 
 	// Daftar Webhook Target
@@ -48,7 +46,7 @@ var (
 		{
 			Name:     "Divisi IT",
 			URL:      "https://discord.com/api/webhooks/1443879495324008488/z-jzPBXv6vBvE45-QFrV-wwcIp8Qz9GtMw0bSQeKh1ltjHXZjcUPmjN3pMpS7Jg4yZJ0",
-			Mentions: "@abi_lp @tedja_putra_lp @ade_muhammad_lp @bian_kusumah_lp @arifinmz29",
+			Mentions: "@abi_lp @tedja_putra_lp @ade_muhammad_lp @bian_kusumah_lp",
 		},
 		{
 			Name:     "Apran Channel",
@@ -60,6 +58,13 @@ var (
 
 // Koleksi Quotes berdasarkan kategori waktu
 var randomQuotes = map[string][]Quote{
+	// 🔥 BARU: Quote Khusus Dhuha
+	"Dhuha": {
+		{"Dua rakaat shalat Dhuha setara dengan 360 sedekah yang diwajibkan atas setiap persendian tubuhmu.", "HR. Muslim"},
+		{"Barangsiapa shalat Dhuha dua belas rakaat, niscaya Allah membangunkan baginya istana di surga.", "HR. Tirmidzi & Ibnu Majah"},
+		{"Shalat Dhuha adalah shalat awwabin (orang-orang yang kembali taat), ketika anak unta kepanasan.", "HR. Muslim"},
+		{"Jadikan awal harimu penuh berkah dengan Shalat Dhuha. Rezeki menanti para hamba yang bertakwa.", "Nasehat Islam"},
+	},
 	// Quotes untuk notifikasi SEBELUM Adzan (Mendorong tepat waktu/persiapan)
 	"SebelumAdzan": {
 		{"Jagalah shalat lima waktu, terutama shalat yang pertengahan (Ashar) dan berdirilah untuk Allah (dalam shalatmu) dengan khusyuk.", "QS. Al-Baqarah: 238"},
@@ -97,9 +102,6 @@ func getRandomQuote(category string) Quote {
 		return Quote{Text: "Dirikanlah salat dan tunaikanlah zakat.", Reference: "QS. Al-Baqarah: 110"} // Default
 	}
 
-	// Inisialisasi rand (hanya diperlukan sekali, tapi Go akan menangani seed dengan baik)
-	// rand.Seed(time.Now().UnixNano()) // Dihapus karena Go modern menangani seed secara default
-
 	randomIndex := rand.Intn(len(quotes))
 	return quotes[randomIndex]
 }
@@ -107,7 +109,11 @@ func getRandomQuote(category string) Quote {
 // getPrayerQuoteEmbed membuat embed untuk kutipan ayat/hadits berdasarkan status waktu notifikasi
 func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool) DiscordEmbed {
 	var category string
-	if isAdzan {
+
+	// 🔥 KHUSUS DHUHA
+	if label == "Dhuha" {
+		category = "Dhuha"
+	} else if isAdzan {
 		category = "SaatAdzan"
 	} else if isBefore {
 		category = "SebelumAdzan"
@@ -179,10 +185,10 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 	}
 	absDuration = absDuration.Truncate(time.Minute)
 
-	// Tentukan apakah notifikasi tepat diwaktu adzan (offset 0 menit)
-	isExactlyAdzan := absDuration.Minutes() < 1
-	// Tentukan apakah notifikasi setelah adzan (offset positif)
-	isAfter := !isBefore && !isExactlyAdzan
+	// Tentukan apakah notifikasi tepat diwaktu "Adzan" (offset 0 menit atau untuk Dhuha)
+	isExactlyTime := absDuration.Minutes() < 1
+	// Tentukan apakah notifikasi setelah "Adzan" (offset positif)
+	isAfter := !isBefore && !isExactlyTime
 
 	if notificationTime.After(fiveMinutesAgo) && (notificationTime.Before(now) || notificationTime.Equal(now)) {
 
@@ -190,7 +196,13 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		var mainDescription string
 		var embedColor int // Warna dalam format desimal
 
-		if isBefore {
+		// 🔥 LOGIKA KHUSUS UNTUK DHUHA
+		if label == "Dhuha" {
+			embedColor = 16763904 // Warna Kuning/Emas untuk Sunnah
+			mainTitle = "✨ WAKTU SHALAT DHUHA DIMULAI!"
+			mainDescription = fmt.Sprintf("Shalat Dhuha sudah dapat ditunaikan mulai Pukul **%s**. Mari raih keutamaan sunnah untuk kelancaran rezeki dan aktivitas harian.", shalatTime.Format("15:04"))
+
+		} else if isBefore {
 			durationUntilShalat := shalatTime.Sub(now).Truncate(time.Second)
 			embedColor = 16763904 // Warna Kuning (Pengingat)
 
@@ -201,7 +213,6 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 					shalatTime.Format("15:04"),
 				)
 			} else {
-				// Ini berarti notif sebelum adzan terlewat, tapi masih dalam 5 menit jendela
 				mainTitle = fmt.Sprintf("🚨 ADZAN %s TELAH TIBA (Delayed)!", label)
 				mainDescription = fmt.Sprintf("Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%v** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
 					shalatTime.Format("15:04"),
@@ -212,16 +223,15 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		} else {
 			embedColor = 5814783 // Warna Hijau (Waktu Salat Berlangsung)
 
-			// Logika untuk Saat Adzan dan Setelah Adzan
-			if isExactlyAdzan {
+			if isExactlyTime {
 				mainTitle = fmt.Sprintf("📢 WAKTU ADZAN %s", label)
-				mainDescription = fmt.Sprintf("🔊 @here, Adzan %s baru saja berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
+				mainDescription = fmt.Sprintf("Adzan %s baru saja berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
 					label,
 					shalatTime.Format("15:04"),
 				)
 			} else { // isAfter
-				mainTitle = fmt.Sprintf("✅ WAKTU SHALAT %s SEDANG BERLANGSUNG", label)
-				mainDescription = fmt.Sprintf("🔊 @here, Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
+				mainTitle = fmt.Sprintf("✅ WAKTU SALAT %s SEDANG BERLANGSUNG", label)
+				mainDescription = fmt.Sprintf("Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
 					label,
 					shalatTime.Format("15:04"),
 					absDuration,
@@ -243,8 +253,9 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		}
 
 		// 2. EMBED KUTIPAN (Ayat/Hadits)
-		// 🔥 MENGGUNAKAN LOGIKA PEMILIHAN RANDOM BARU
-		quoteEmbed := getPrayerQuoteEmbed(label, isBefore, isExactlyAdzan, isAfter)
+		// Dhuha tidak memiliki 'Adzan', jadi kita set isBefore/isAfter ke false.
+		isAdzanForQuote := isExactlyTime && label != "Dhuha"
+		quoteEmbed := getPrayerQuoteEmbed(label, isBefore, isAdzanForQuote, isAfter)
 
 		// 4. EMBED DISCLAIMER
 		disclaimerEmbed := DiscordEmbed{
@@ -290,7 +301,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 			// Panggil sendWebhook
 
-			// Hapus mentions dari payload content jika tidak seharusnya di mention (Subuh/Isya)
+			// Hapus mentions dari payload content jika tidak seharusnya di mention (Subuh/Isya/Dhuha)
 			currentTarget := target
 			if !shouldMention {
 				currentTarget.Mentions = ""
@@ -305,8 +316,8 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 				func() string {
 					if isBefore {
 						return "SEBELUM"
-					} else if isExactlyAdzan {
-						return "SAAT ADZAN"
+					} else if isExactlyTime {
+						return "SAAT MULAI"
 					} else {
 						return "SETELAH"
 					}
@@ -334,7 +345,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 	} else {
 		// Logika SKIPPED
 		fmt.Printf(
-			"⏩ SKIPPED %s (%v %s Adzan). Waktu Adzan: %s. Waktu Notif Seharusnya: %s. Waktu Saat Ini: %s WIB.\n",
+			"⏩ SKIPPED %s (%v %s Waktu). Waktu Mulai: %s. Waktu Notif Seharusnya: %s. Waktu Saat Ini: %s WIB.\n",
 			label,
 			absDuration,
 			func() string {
@@ -395,21 +406,34 @@ func main() {
 	}
 
 	fajr := schedule.Fajr.In(loc)
+	sunrise := schedule.Sunrise.In(loc) // 🔥 Ambil waktu Sunrise
 	dhuhr := schedule.Zuhr.In(loc)
 	asr := schedule.Asr.In(loc)
 	maghrib := schedule.Maghrib.In(loc)
 	isha := schedule.Isha.In(loc)
+
+	// 🔥 HITUNG AWAL WAKTU DHUHA (18 menit setelah Sunrise)
+	// Dhuha tidak memiliki 'Adzan' dan tidak memiliki offset reminder sebelum/setelah
+	// Kita anggap waktu Dhuha di sini adalah waktu notifikasi tunggal.
+	dhuhaStart := sunrise.Add(18 * time.Minute)
 
 	prayerTimes := []struct {
 		label string
 		t     time.Time
 	}{
 		{"Subuh", fajr},
+		{"Dhuha", dhuhaStart}, // 🔥 Tambahkan Dhuha
 		{"Dzuhur", dhuhr},
 		{"Ashar", asr},
 		{"Maghrib", maghrib},
 		{"Isya", isha},
 	}
+
+	// Untuk Dhuha, kita hanya ingin notifikasi tunggal (offset 0),
+	// tetapi agar kompatibel dengan loop di bawah, kita biarkan offset
+	// berjalan untuk semua shalat, dengan asumsi Dhuha hanya akan
+	// match saat offset=0 (isExactlyTime=true) dan notifnya tidak akan
+	// memakai logic isBefore/isAfter.
 
 	offsets := []time.Duration{}
 	for m := -20; m <= 10; m += 2 {
@@ -419,6 +443,12 @@ func main() {
 	for _, prayer := range prayerTimes {
 		for _, offset := range offsets {
 			notificationTime := prayer.t.Add(offset)
+
+			// 🔥 KHUSUS Dhuha: Hanya kirim notifikasi saat offset adalah 0 menit
+			if prayer.label == "Dhuha" && offset.Minutes() != 0 {
+				continue // Lewati reminder sebelum dan sesudah Dhuha
+			}
+
 			checkAndSend(notificationTime, prayer.label, prayer.t, offset)
 		}
 	}
