@@ -139,9 +139,8 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, shalatTimeLabel st
 	}
 
 	// Payload utama Discord Webhook
-	payload := map[string]interface{}{
-		"content": target.Mentions,
-		"embeds":  embeds,
+	payload := map[string]any{
+		"embeds": embeds,
 	}
 
 	body, err := json.Marshal(payload)
