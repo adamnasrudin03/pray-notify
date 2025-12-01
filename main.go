@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"os"
@@ -197,12 +198,15 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, shalatTimeLabel st
 	// Kirim HANYA SATU request HTTP POST
 	resp, err := http.Post(target.URL, "application/json", bytes.NewBuffer(body))
 
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	bodyString := string(bodyBytes)
+
 	if err != nil {
 		result.Error = fmt.Errorf("HTTP post failed: %w", err)
 	} else {
-		resp.Body.Close()
 		if resp.StatusCode >= 300 {
 			result.Error = fmt.Errorf("status code %d", resp.StatusCode)
+			fmt.Printf("Error sending webhook to %s: %+v\n", target.Name, bodyString)
 		}
 	}
 	return result
