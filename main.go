@@ -46,7 +46,7 @@ var (
 		{
 			Name:     "Divisi IT",
 			URL:      "https://discord.com/api/webhooks/1443879495324008488/z-jzPBXv6vBvE45-QFrV-wwcIp8Qz9GtMw0bSQeKh1ltjHXZjcUPmjN3pMpS7Jg4yZJ0",
-			Mentions: "@abi_lp @tedja_putra_lp @ade_muhammad_lp @bian_kusumah_lp @arifinmz29",
+			Mentions: "@abi_lp  @tedja_putra_lp  @ade_muhammad_lp  @bian_kusumah_lp  @arifinmz29  ",
 		},
 		{
 			Name:     "Apran Channel",
