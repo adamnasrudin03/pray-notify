@@ -326,7 +326,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 				// Gabungkan Mentions di Description Embed
 				coordinationDescription := fmt.Sprintf(
-					"🔊 **Kepada Bapak/Ibu Rekan Kerja %s**, mohon izin untuk saling mengingatkan dan mengkoordinasikan agar ibadah salat dapat ditunaikan dengan tepat waktu. Terima kasih banyak atas perhatian dan kerjasamanya.",
+					"🔊 **Kepada Bapak/Ibu Rekan Kerja** %s , mohon izin untuk saling mengingatkan dan mengkoordinasikan agar ibadah salat dapat ditunaikan dengan tepat waktu. Terima kasih banyak atas perhatian dan kerjasamanya.",
 					target.Mentions,
 				)
 
