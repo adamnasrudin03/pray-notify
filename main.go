@@ -164,13 +164,13 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, shalatTimeLabel st
 		"embeds": embeds,
 	}
 
-	// Hanya tambahkan mentions ke 'content' jika ada dan ini adalah waktu yang valid untuk mention (Dzuhur, Ashar, Maghrib)
-	if target.Mentions != "" {
-		switch shalatTimeLabel {
-		case "Dzuhur", "Ashar", "Maghrib":
-			payload["content"] = target.Mentions
-		}
-	}
+	// // Hanya tambahkan mentions ke 'content' jika ada dan ini adalah waktu yang valid untuk mention (Dzuhur, Ashar, Maghrib)
+	// if target.Mentions != "" {
+	// 	switch shalatTimeLabel {
+	// 	case "Dzuhur", "Ashar", "Maghrib":
+	// 		payload["content"] = target.Mentions
+	// 	}
+	// }
 
 	body, err := json.Marshal(payload)
 
@@ -228,7 +228,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 		herePrefix := ""
 		if shouldUseHere {
-			herePrefix = "📢 @here, "
+			herePrefix = "📢 @here, @adamnasrudin "
 		}
 
 		// 🔥 LOGIKA KHUSUS UNTUK DHUHA
