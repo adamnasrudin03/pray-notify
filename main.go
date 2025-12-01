@@ -300,8 +300,8 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		// 4. EMBED DISCLAIMER
 		disclaimerEmbed := DiscordEmbed{
 			Color:       10070709, // Warna Ungu (Purple/Blurple)
-			Title:       "✨ Catatan Santun",
-			Description: "Pesan ini adalah pengingat otomatis. Kami menghormati keyakinan dan praktik ibadah Anda. Notifikasi ini ditujukan khusus bagi **Rekan Muslim yang menunaikan salat**.",
+			Title:       "✨ Catatan",
+			Description: "Pesan ini adalah pengingat otomatis. Kami menghormati keyakinan dan praktik ibadah Anda. Notifikasi ini ditujukan khusus bagi **Rekan Muslim yang menunaikan ibadah shalat**.",
 		}
 
 		// Loop dan Kirim ke Semua Webhook
