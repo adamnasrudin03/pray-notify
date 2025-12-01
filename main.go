@@ -127,7 +127,7 @@ func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool
 
 	return DiscordEmbed{
 		Color:       3447003, // Warna Biru (Blue)
-		Title:       "📖 Kutipan Ayat/Hadits",
+		Title:       "📖 Kutipan",
 		Description: fmt.Sprintf("> *%s*\n\n— %s", selected.Text, selected.Reference),
 	}
 }
@@ -260,7 +260,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		// 4. EMBED DISCLAIMER
 		disclaimerEmbed := DiscordEmbed{
 			Color:       10070709, // Warna Ungu (Purple/Blurple)
-			Title:       "✨ Catatan Santun",
+			Title:       "✨ Disclaimer",
 			Description: "Pesan ini adalah pengingat otomatis. Kami menghormati keyakinan dan praktik ibadah Anda. Notifikasi ini ditujukan khusus bagi **Rekan Muslim yang menunaikan salat**.",
 		}
 
