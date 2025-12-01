@@ -13,14 +13,12 @@ import (
 	"github.com/hablullah/go-prayer"
 )
 
-// Struktur baru untuk menyimpan URL, Nama/Label Webhook, dan Mentions CC
 type WebhookTarget struct {
 	Name     string
 	URL      string
-	Mentions string // Field untuk CC (@user @user)
+	Mentions string
 }
 
-// Struktur untuk menampung data Embed yang akan dikirim
 type DiscordEmbed struct {
 	Color       int                `json:"color"`
 	Title       string             `json:"title"`
@@ -29,7 +27,6 @@ type DiscordEmbed struct {
 	Footer      *map[string]string `json:"footer,omitempty"`
 }
 
-// Struktur baru untuk quote
 type Quote struct {
 	Text      string
 	Reference string
@@ -45,18 +42,18 @@ var (
 	webhookTargets = []WebhookTarget{
 		{
 			Name:     "Divisi IT",
-			URL:      "https://discord.com/api/webhooks/1443879495324008488/z-jzPBXv6vBvE45-QFrV-wwcIp8Qz9GtMw0bSQeKh1ltjHXZjcUPmjN3pMpS7Jg4yZJ0",
-			Mentions: "@abi_lp  @tedja_putra_lp  @ade_muhammad_lp  @bian_kusumah_lp  @arifinmz29  ",
+			URL:      "https://discord.com/api/webhooks/1443879495324008488/z-jzPBXv6vBvE45-QFrV-wwcIp8Qz9GtMw0bSQeKh1ltjHXZjcUPmjP7Jg4yZJ0", // Ganti dengan URL Anda
+			Mentions: "@abi_lp  @tedja_putra_lp  @ade_muhammad_lp  @bian_kusumah_lp  @arifinmz29 ",
 		},
 		{
 			Name:     "Apran Channel",
-			URL:      "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix",
+			URL:      "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix", // Ganti dengan URL Anda
 			Mentions: "",
 		},
 	}
 )
 
-// Koleksi Quotes berdasarkan kategori waktu
+// Koleksi Quotes berdasarkan kategori waktu (Tidak ada perubahan)
 var randomQuotes = map[string][]Quote{
 	// 🔥 Quote Khusus Dhuha
 	"Dhuha": {
@@ -72,7 +69,6 @@ var randomQuotes = map[string][]Quote{
 		{"Bersegeralah mendirikan shalat sebelum sibuk dengan urusan dunia.", "Nasehat Islam"},
 		{"Sesungguhnya shalat pada waktunya adalah kewajiban yang telah ditentukan atas orang-orang yang beriman.", "QS. An-Nisa: 103"},
 	},
-	// 🔥 Quotes SPESIFIK saat Adzan (DIUBAH)
 	"AdzanSubuh": {
 		{"Sesungguhnya shalat Subuh itu disaksikan (oleh malaikat-malaikat malam dan malaikat-malaikat siang).", "QS. Al-Isra: 78"},
 		{"Barangsiapa shalat Shubuh berjama’ah, maka dia berada dalam jaminan Allah.", "HR. Muslim"},
@@ -164,13 +160,32 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, shalatTimeLabel st
 		"embeds": embeds,
 	}
 
-	// // Hanya tambahkan mentions ke 'content' jika ada dan ini adalah waktu yang valid untuk mention (Dzuhur, Ashar, Maghrib)
-	// if target.Mentions != "" {
-	// 	switch shalatTimeLabel {
-	// 	case "Dzuhur", "Ashar", "Maghrib":
-	// 		payload["content"] = target.Mentions
-	// 	}
-	// }
+	// 🔥 LOGIKA BARU UNTUK CONTENT/MENTIONS 🔥 (Inilah bagian yang diperbaiki)
+	mentionContent := ""
+
+	// 1. Tambahkan @here (kecuali Subuh dan Isya)
+	if shalatTimeLabel == "Dhuha" || shalatTimeLabel == "Dzuhur" || shalatTimeLabel == "Ashar" || shalatTimeLabel == "Maghrib" {
+		mentionContent += "📢 @here"
+	}
+
+	// 2. Tambahkan Mentions CC (hanya Dzuhur, Ashar, Maghrib)
+	if target.Mentions != "" {
+		switch shalatTimeLabel {
+		case "Dzuhur", "Ashar", "Maghrib":
+			// Jika @here sudah ada, tambahkan spasi
+			if mentionContent != "" {
+				mentionContent += " "
+			}
+			// Tambahkan Mentions @user/@role dari config
+			mentionContent += target.Mentions
+		}
+	}
+
+	// Jika ada content (mention), masukkan ke payload agar terkirim bersama embed
+	if mentionContent != "" {
+		payload["content"] = mentionContent
+	}
+	// 🔥 AKHIR LOGIKA BARU UNTUK CONTENT/MENTIONS 🔥
 
 	body, err := json.Marshal(payload)
 
@@ -179,6 +194,7 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, shalatTimeLabel st
 		return result
 	}
 
+	// Kirim HANYA SATU request HTTP POST
 	resp, err := http.Post(target.URL, "application/json", bytes.NewBuffer(body))
 
 	if err != nil {
@@ -219,24 +235,12 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		var mainDescription string
 		var embedColor int // Warna dalam format desimal
 
-		// Cek apakah ini waktu yang seharusnya menggunakan @here di deskripsi utama
-		shouldUseHere := true
-		if label == "Subuh" || label == "Isya" {
-			// Subuh dan Isya (diluar jam kerja) tidak perlu @here
-			shouldUseHere = false
-		}
-
-		herePrefix := ""
-		if shouldUseHere {
-			herePrefix = "📢 @here, @adamnasrudin "
-		}
-
 		// 🔥 LOGIKA KHUSUS UNTUK DHUHA
 		if label == "Dhuha" {
 			embedColor = 16763904 // Warna Kuning/Emas untuk Sunnah
 			mainTitle = "✨ WAKTU SHALAT DHUHA DIMULAI!"
-			// Dhuha menggunakan @here
-			mainDescription = fmt.Sprintf("📢 @here, Shalat Dhuha sudah dapat ditunaikan mulai Pukul **%s**. Mari raih keutamaan sunnah untuk kelancaran rezeki dan aktivitas harian.", shalatTime.Format("15:04"))
+			// Hapus mention dari deskripsi, biarkan di sendWebhook
+			mainDescription = fmt.Sprintf("Shalat Dhuha sudah dapat ditunaikan mulai Pukul **%s**. Mari raih keutamaan sunnah untuk kelancaran rezeki dan aktivitas harian.", shalatTime.Format("15:04"))
 
 		} else if isBefore {
 			durationUntilShalat := shalatTime.Sub(now).Truncate(time.Second)
@@ -244,15 +248,15 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 			if durationUntilShalat > 0 {
 				mainTitle = fmt.Sprintf("🕌 Adzan %s Akan Tiba!", label)
-				mainDescription = fmt.Sprintf("%s Waktu Shalat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
-					herePrefix,
+				// Hapus mention dari deskripsi
+				mainDescription = fmt.Sprintf("Waktu Shalat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
 					durationUntilShalat.Truncate(time.Minute),
 					shalatTime.Format("15:04"),
 				)
 			} else {
 				mainTitle = fmt.Sprintf("🚨 ADZAN %s TELAH TIBA (Delayed)!", label)
-				mainDescription = fmt.Sprintf("%s Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%v** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
-					herePrefix,
+				// Hapus mention dari deskripsi
+				mainDescription = fmt.Sprintf("Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%v** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
 					shalatTime.Format("15:04"),
 					absDuration,
 				)
@@ -263,15 +267,15 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 			if isExactlyTime {
 				mainTitle = fmt.Sprintf("📢 WAKTU ADZAN %s", label)
-				mainDescription = fmt.Sprintf("%s Adzan %s baru saja berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
-					herePrefix,
+				// Hapus mention dari deskripsi
+				mainDescription = fmt.Sprintf("Adzan %s baru saja berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
 					label,
 					shalatTime.Format("15:04"),
 				)
 			} else { // isAfter
 				mainTitle = fmt.Sprintf("✅ WAKTU SHALAT %s SEDANG BERLANGSUNG", label)
-				mainDescription = fmt.Sprintf("%s Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
-					herePrefix,
+				// Hapus mention dari deskripsi
+				mainDescription = fmt.Sprintf("Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
 					label,
 					shalatTime.Format("15:04"),
 					absDuration,
@@ -320,15 +324,11 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 			}
 
 			// 3. EMBED KOORDINASI (Conditional Mentions)
-			// Embed koordinasi hanya muncul jika ada mentions yang diset
 			currentTarget := target
 			if shouldMention {
 
-				// Gabungkan Mentions di Description Embed
-				coordinationDescription := fmt.Sprintf(
-					"🔊 **Kepada Bapak/Ibu Rekan Kerja** %s , mohon izin untuk saling mengingatkan dan mengkoordinasikan agar ibadah salat dapat ditunaikan dengan tepat waktu. Terima kasih banyak atas perhatian dan kerjasamanya.",
-					target.Mentions,
-				)
+				// 🔥 PENTING: Hapus mentions dari Description, Mentions dikirim di field 'content' utama
+				coordinationDescription := "Mohon izin untuk saling mengingatkan dan mengkoordinasikan agar ibadah salat dapat ditunaikan dengan tepat waktu. Terima kasih banyak atas perhatian dan kerjasamanya."
 
 				coordinationEmbed := DiscordEmbed{
 					Color:       15158332, // Warna Merah
@@ -345,6 +345,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 			embedsToSend = append(embedsToSend, disclaimerEmbed)
 
 			// Panggil sendWebhook
+			// Perubahan sudah di sendWebhook untuk menggabungkan mention dan embed di satu pesan
 			result := sendWebhook(embedsToSend, currentTarget, label)
 
 			// Log hasil pengiriman
@@ -368,7 +369,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 				if strings.Contains(result.Error.Error(), "SKIPPED: Divisi IT") {
 					fmt.Printf("⏩ SKIPPED %s (WEEKEND) for Webhook: %s\n", label, result.Name)
 				} else {
-					fmt.Printf("❌ Error sending multi-EMBED notification for %s. Error: %v\n", logMessage, result.Error)
+					fmt.Printf("❌ Error sending single-EMBED message for %s. Error: %v\n", logMessage, result.Error)
 				}
 			} else {
 				// Tambahkan indikator mentions di log
@@ -376,7 +377,8 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 				if shouldMention && target.Mentions != "" {
 					mentionsInfo = " (with CC)"
 				}
-				fmt.Printf("✅ Sent multi-EMBED notification for %s. Embeds: %d%s.\n", logMessage, len(embedsToSend), mentionsInfo)
+				// Log diubah untuk menunjukkan pesan tunggal
+				fmt.Printf("✅ Sent single-EMBED message for %s. Embeds: %d%s.\n", logMessage, len(embedsToSend), mentionsInfo)
 			}
 		}
 
@@ -451,7 +453,6 @@ func main() {
 	isha := schedule.Isha.In(loc)
 
 	// 🔥 HITUNG AWAL WAKTU DHUHA (18 menit setelah Sunrise)
-	// Kita anggap waktu Dhuha di sini adalah waktu notifikasi tunggal.
 	dhuhaStart := sunrise.Add(18 * time.Minute)
 
 	prayerTimes := []struct {
@@ -465,12 +466,6 @@ func main() {
 		{"Maghrib", maghrib},
 		{"Isya", isha},
 	}
-
-	// Untuk Dhuha, kita hanya ingin notifikasi tunggal (offset 0),
-	// tetapi agar kompatibel dengan loop di bawah, kita biarkan offset
-	// berjalan untuk semua shalat, dengan asumsi Dhuha hanya akan
-	// match saat offset=0 (isExactlyTime=true) dan notifnya tidak akan
-	// memakai logic isBefore/isAfter.
 
 	offsets := []time.Duration{}
 	for m := -20; m <= 10; m += 1 {
