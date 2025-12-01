@@ -472,7 +472,7 @@ func main() {
 	}
 
 	offsets := []time.Duration{}
-	for m := -20; m <= 10; m += 1 {
+	for m := -20; m <= 15; m += 1 {
 		offsets = append(offsets, time.Duration(m)*time.Minute)
 	}
 
