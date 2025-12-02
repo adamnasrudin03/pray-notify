@@ -15,9 +15,8 @@ import (
 )
 
 type WebhookTarget struct {
-	Name     string
-	URL      string
-	Mentions string
+	Name string
+	URL  string
 }
 
 type DiscordEmbed struct {
@@ -33,6 +32,11 @@ type Quote struct {
 	Reference string
 }
 
+const (
+	DivisiIT  = "Divisi IT"
+	MyChannel = "My Channel"
+)
+
 var (
 	// Koordinat Lion Parcel Kedoya, Kebon Jeruk, Jakarta Barat
 	lat      = -6.189541191231946
@@ -42,14 +46,12 @@ var (
 	// Daftar Webhook Target
 	webhookTargets = []WebhookTarget{
 		{
-			Name:     "Divisi IT",
-			URL:      "https://discord.com/api/webhooks/1443879495324008488/z-jzPBXv6vBvE45-QFrV-wwcIp8Qz9GtMw0bSQeKh1ltjHXZjcUPmjN3pMpS7Jg4yZJ0",
-			Mentions: "@abi_lp  @tedja_putra_lp  @ade_muhammad_lp  @bian_kusumah_lp  @arifinmz29 ",
+			Name: DivisiIT,
+			URL:  "https://discord.com/api/webhooks/1443879495324008488/z-jzPBXv6vBvE45-QFrV-wwcIp8Qz9GtMw0bSQeKh1ltjHXZjcUPmjN3pMpS7Jg4yZJ0",
 		},
 		{
-			Name:     "Apran Channel",
-			URL:      "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix",
-			Mentions: "",
+			Name: MyChannel,
+			URL:  "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix",
 		},
 	}
 )
@@ -151,42 +153,16 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, shalatTimeLabel st
 	now := time.Now()
 
 	// 🛑 VALIDASI 1: Cek Hari Libur/Weekend untuk Webhook "Divisi IT"
-	if target.Name == "Divisi IT" && (now.Weekday() == time.Saturday || now.Weekday() == time.Sunday) {
+	if target.Name == DivisiIT && (now.Weekday() == time.Saturday || now.Weekday() == time.Sunday) {
 		result.Error = fmt.Errorf("webhook SKIPPED: Divisi IT is not active on weekends (Saturday/Sunday)")
 		return result
 	}
 
 	// Payload utama Discord Webhook
 	payload := map[string]any{
-		"embeds": embeds,
+		"content": "╔═══[ 🚨 NOTIFICATION WAKTU SHALAT ]═══╗",
+		"embeds":  embeds,
 	}
-
-	// 🔥 LOGIKA BARU UNTUK CONTENT/MENTIONS 🔥 (Inilah bagian yang diperbaiki)
-	mentionContent := ""
-
-	// 1. Tambahkan @here (kecuali Subuh dan Isya)
-	if shalatTimeLabel == "Dhuha" || shalatTimeLabel == "Dzuhur" || shalatTimeLabel == "Ashar" || shalatTimeLabel == "Maghrib" {
-		mentionContent += "📢 @here"
-	}
-
-	// 2. Tambahkan Mentions CC (hanya Dzuhur, Ashar, Maghrib)
-	if target.Mentions != "" {
-		switch shalatTimeLabel {
-		case "Dzuhur", "Ashar", "Maghrib":
-			// Jika @here sudah ada, tambahkan spasi
-			if mentionContent != "" {
-				mentionContent += " "
-			}
-			// Tambahkan Mentions @user/@role dari config
-			mentionContent += target.Mentions
-		}
-	}
-
-	// Jika ada content (mention), masukkan ke payload agar terkirim bersama embed
-	if mentionContent != "" {
-		payload["content"] = mentionContent
-	}
-	// 🔥 AKHIR LOGIKA BARU UNTUK CONTENT/MENTIONS 🔥
 
 	body, err := json.Marshal(payload)
 
@@ -243,8 +219,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		if label == "Dhuha" {
 			embedColor = 16763904 // Warna Kuning/Emas untuk Sunnah
 			mainTitle = "✨ WAKTU SHALAT DHUHA DIMULAI!"
-			// Hapus mention dari deskripsi, biarkan di sendWebhook
-			mainDescription = fmt.Sprintf("Shalat Dhuha sudah dapat ditunaikan mulai Pukul **%s**. Mari raih keutamaan sunnah untuk kelancaran rezeki dan aktivitas harian.", shalatTime.Format("15:04"))
+			mainDescription = fmt.Sprintf("📢 @here Shalat Dhuha sudah dapat ditunaikan mulai Pukul **%s**. Mari raih keutamaan sunnah untuk kelancaran rezeki dan aktivitas harian.", shalatTime.Format("15:04"))
 
 		} else if isBefore {
 			durationUntilShalat := shalatTime.Sub(now).Truncate(time.Second)
@@ -252,15 +227,13 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 			if durationUntilShalat > 0 {
 				mainTitle = fmt.Sprintf("🕌 Adzan %s Akan Tiba!", label)
-				// Hapus mention dari deskripsi
-				mainDescription = fmt.Sprintf("Waktu Shalat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
+				mainDescription = fmt.Sprintf("📢 @Warga Waktu Shalat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
 					durationUntilShalat.Truncate(time.Minute),
 					shalatTime.Format("15:04"),
 				)
 			} else {
 				mainTitle = fmt.Sprintf("🚨 ADZAN %s TELAH TIBA (Delayed)!", label)
-				// Hapus mention dari deskripsi
-				mainDescription = fmt.Sprintf("Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%v** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
+				mainDescription = fmt.Sprintf("📢 @here Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%v** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
 					shalatTime.Format("15:04"),
 					absDuration,
 				)
@@ -271,15 +244,13 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 			if isExactlyTime {
 				mainTitle = fmt.Sprintf("📢 WAKTU ADZAN %s", label)
-				// Hapus mention dari deskripsi
-				mainDescription = fmt.Sprintf("Adzan %s baru saja berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
+				mainDescription = fmt.Sprintf("🔊 @Warga Adzan %s baru saja berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
 					label,
 					shalatTime.Format("15:04"),
 				)
 			} else { // isAfter
 				mainTitle = fmt.Sprintf("✅ WAKTU SHALAT %s SEDANG BERLANGSUNG", label)
-				// Hapus mention dari deskripsi
-				mainDescription = fmt.Sprintf("Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
+				mainDescription = fmt.Sprintf("📢 @here Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
 					label,
 					shalatTime.Format("15:04"),
 					absDuration,
@@ -289,7 +260,6 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 		wibLoc := time.FixedZone("WIB", 7*3600)
 
-		// 1. EMBED UTAMA (Waktu Salat)
 		mainEmbed := DiscordEmbed{
 			Color:       embedColor,
 			Title:       mainTitle,
@@ -300,12 +270,9 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 			},
 		}
 
-		// 2. EMBED KUTIPAN (Ayat/Hadits)
-		// Dhuha tidak memiliki 'Adzan'
 		isAdzanForQuote := isExactlyTime && label != "Dhuha"
 		quoteEmbed := getPrayerQuoteEmbed(label, isBefore, isAdzanForQuote, isAfter)
 
-		// 4. EMBED DISCLAIMER
 		disclaimerEmbed := DiscordEmbed{
 			Color:       10070709, // Warna Ungu (Purple/Blurple)
 			Title:       "✨ Catatan",
@@ -318,32 +285,16 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 			// Siapkan array embed (min 3)
 			embedsToSend := []DiscordEmbed{mainEmbed, quoteEmbed}
 
-			// 🛑 VALIDASI 2: Cek waktu Salat untuk Mentions (Hanya Dzuhur, Ashar, Maghrib)
-			shouldMention := false
-			if target.Mentions != "" {
-				switch label {
-				case "Dzuhur", "Ashar", "Maghrib":
-					shouldMention = true
-				}
-			}
-
-			// 3. EMBED KOORDINASI (Conditional Mentions)
 			currentTarget := target
-			if shouldMention {
 
-				// 🔥 PENTING: Hapus mentions dari Description, Mentions dikirim di field 'content' utama
-				coordinationDescription := "Mohon izin untuk saling mengingatkan dan mengkoordinasikan agar ibadah salat dapat ditunaikan dengan tepat waktu. Terima kasih banyak atas perhatian dan kerjasamanya."
+			coordinationDescription := "Mohon izin untuk saling mengingatkan dan mengkoordinasikan agar ibadah salat dapat ditunaikan dengan tepat waktu. Terima kasih banyak atas perhatian dan kerjasamanya."
 
-				coordinationEmbed := DiscordEmbed{
-					Color:       15158332, // Warna Merah
-					Title:       "📢 Koordinasi Waktu Ibadah",
-					Description: coordinationDescription,
-				}
-				embedsToSend = append(embedsToSend, coordinationEmbed)
-			} else {
-				// Hapus mentions dari payload content jika tidak seharusnya di mention (Subuh/Isya/Dhuha atau notifikasi sebelum adzan)
-				currentTarget.Mentions = ""
+			coordinationEmbed := DiscordEmbed{
+				Color:       15158332, // Warna Merah
+				Title:       "📢 Koordinasi Waktu Ibadah",
+				Description: coordinationDescription,
 			}
+			embedsToSend = append(embedsToSend, coordinationEmbed)
 
 			// Tambahkan Disclaimer sebagai embed terakhir
 			embedsToSend = append(embedsToSend, disclaimerEmbed)
@@ -369,20 +320,13 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 			)
 
 			if result.Error != nil {
-				// Cek jika errornya adalah SKIPPED WEEKEND
 				if strings.Contains(result.Error.Error(), "SKIPPED: Divisi IT") {
 					fmt.Printf("⏩ SKIPPED %s (WEEKEND) for Webhook: %s\n", label, result.Name)
 				} else {
-					fmt.Printf("❌ Error sending single-EMBED message for %s. Error: %v\n", logMessage, result.Error)
+					fmt.Printf("❌ Error sending message for %s. Error: %v\n", logMessage, result.Error)
 				}
 			} else {
-				// Tambahkan indikator mentions di log
-				mentionsInfo := ""
-				if shouldMention && target.Mentions != "" {
-					mentionsInfo = " (with CC)"
-				}
-				// Log diubah untuk menunjukkan pesan tunggal
-				fmt.Printf("✅ Sent single-EMBED message for %s. Embeds: %d%s.\n", logMessage, len(embedsToSend), mentionsInfo)
+				fmt.Printf("✅ Successfully Sent message for %+v. Embeds: %+v.\n", logMessage, len(embedsToSend))
 			}
 		}
 
@@ -409,9 +353,6 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 // ---------------------------------------------------------------------------------------
 
 func main() {
-	// PENTING: Seed Randomizer hanya sekali di main
-	rand.Seed(time.Now().UnixNano())
-
 	loc, err := time.LoadLocation(timezone)
 	if err != nil {
 		fmt.Printf("Error loading timezone: %v\n", err)
