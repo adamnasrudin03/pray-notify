@@ -36,7 +36,13 @@ const (
 	DivisiIT  = "Divisi IT"
 	MyChannel = "My Channel"
 
-	Dhuha        = "Dhuha"
+	Dhuha   = "Dhuha"
+	Subuh   = "Subuh"
+	Dzuhur  = "Dzuhur"
+	Ashar   = "Ashar"
+	Maghrib = "Maghrib"
+	Isya    = "Isya"
+
 	SebelumAdzan = "SebelumAdzan"
 	AdzanSubuh   = "AdzanSubuh"
 	AdzanDzuhur  = "AdzanDzuhur"
@@ -451,12 +457,12 @@ func main() {
 		label string
 		t     time.Time
 	}{
-		{"Subuh", fajr},
-		{"Dhuha", dhuhaStart}, // 🔥 Tambahkan Dhuha
-		{"Dzuhur", dhuhr},
-		{"Ashar", asr},
-		{"Maghrib", maghrib},
-		{"Isya", isha},
+		{Subuh, fajr},
+		{Dhuha, dhuhaStart}, // 🔥 Tambahkan Dhuha
+		{Dzuhur, dhuhr},
+		{Ashar, asr},
+		{Maghrib, maghrib},
+		{Isya, isha},
 	}
 
 	offsetsMain := []time.Duration{}
