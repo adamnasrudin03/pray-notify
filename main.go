@@ -459,17 +459,27 @@ func main() {
 		{"Isya", isha},
 	}
 
-	offsets := []time.Duration{}
+	offsetsMain := []time.Duration{}
 	for m := -30; m <= 30; m += 5 {
-		offsets = append(offsets, time.Duration(m)*time.Minute)
+		offsetsMain = append(offsetsMain, time.Duration(m)*time.Minute)
+	}
+
+	offsetsCaseSpecific := []time.Duration{}
+	for m := -30; m <= 30; m += 1 {
+		offsetsCaseSpecific = append(offsetsCaseSpecific, time.Duration(m)*time.Minute)
 	}
 
 	for _, prayer := range prayerTimes {
-		for _, offset := range offsets {
+		currentOffsets := offsetsMain
+		if prayer.label == Dhuha {
+			currentOffsets = offsetsCaseSpecific
+		}
+
+		for _, offset := range currentOffsets {
 			notificationTime := prayer.t.Add(offset)
 
 			// 🔥 KHUSUS Dhuha: Hanya kirim notifikasi saat offset adalah 0 menit
-			if prayer.label == "Dhuha" && offset.Minutes() != 0 {
+			if prayer.label == Dhuha && offset.Minutes() != 0 {
 				continue // Lewati reminder sebelum dan sesudah Dhuha
 			}
 
