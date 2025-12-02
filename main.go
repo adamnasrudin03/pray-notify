@@ -361,7 +361,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 			currentTarget := target
 
-			coordinationDescription := "Mohon izin untuk saling mengingatkan dan mengkoordinasikan agar ibadah salat dapat ditunaikan dengan tepat waktu. Terima kasih banyak atas perhatian dan kerjasamanya."
+			coordinationDescription := "Mohon izin untuk saling mengingatkan dan mengkoordinasikan agar ibadah shalat dapat ditunaikan dengan tepat waktu. Terima kasih banyak atas perhatian dan kerjasamanya."
 
 			coordinationEmbed := DiscordEmbed{
 				Color:       15158332, // Warna Merah
