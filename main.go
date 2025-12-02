@@ -301,7 +301,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 			if durationUntilShalat > 0 {
 				mainTitle = fmt.Sprintf("🕌 Adzan %s Akan Tiba!", label)
-				mainDescription = fmt.Sprintf("📢 @Warga Waktu Shalat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
+				mainDescription = fmt.Sprintf("📢 @here Waktu Shalat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
 					durationUntilShalat.Truncate(time.Minute),
 					shalatTime.Format("15:04"),
 				)
@@ -318,7 +318,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 			if isExactlyTime {
 				mainTitle = fmt.Sprintf("📢 WAKTU ADZAN %s", label)
-				mainDescription = fmt.Sprintf("🔊 @Warga Adzan %s baru saja berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
+				mainDescription = fmt.Sprintf("🔊 @here Adzan %s baru saja berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
 					label,
 					shalatTime.Format("15:04"),
 				)
