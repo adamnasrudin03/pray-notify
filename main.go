@@ -35,6 +35,15 @@ type Quote struct {
 const (
 	DivisiIT  = "Divisi IT"
 	MyChannel = "My Channel"
+
+	Dhuha        = "Dhuha"
+	SebelumAdzan = "SebelumAdzan"
+	AdzanSubuh   = "AdzanSubuh"
+	AdzanDzuhur  = "AdzanDzuhur"
+	AdzanAshar   = "AdzanAshar"
+	AdzanMaghrib = "AdzanMaghrib"
+	AdzanIsya    = "AdzanIsya"
+	SetelahAdzan = "SetelahAdzan"
 )
 
 var (
@@ -59,41 +68,41 @@ var (
 // Koleksi Quotes berdasarkan kategori waktu (Tidak ada perubahan)
 var randomQuotes = map[string][]Quote{
 	// 🔥 Quote Khusus Dhuha
-	"Dhuha": {
+	Dhuha: {
 		{"Dua rakaat shalat Dhuha setara dengan 360 sedekah yang diwajibkan atas setiap persendian tubuhmu.", "HR. Muslim"},
 		{"Barangsiapa shalat Dhuha dua belas rakaat, niscaya Allah membangunkan baginya istana di surga.", "HR. Tirmidzi & Ibnu Majah"},
 		{"Shalat Dhuha adalah shalat awwabin (orang-orang yang kembali taat), ketika anak unta kepanasan.", "HR. Muslim"},
 		{"Jadikan awal harimu penuh berkah dengan Shalat Dhuha. Rezeki menanti para hamba yang bertakwa.", "Nasehat Islam"},
 	},
 	// Quotes untuk notifikasi SEBELUM Adzan (Mendorong tepat waktu/persiapan)
-	"SebelumAdzan": {
+	SebelumAdzan: {
 		{"Jagalah shalat lima waktu, terutama shalat yang pertengahan (Ashar) dan berdirilah untuk Allah (dalam shalatmu) dengan khusyuk.", "QS. Al-Baqarah: 238"},
 		{"Shalat di awal waktu itu adalah amalan yang paling dicintai oleh Allah.", "HR. Bukhari dan Muslim"},
 		{"Bersegeralah mendirikan shalat sebelum sibuk dengan urusan dunia.", "Nasehat Islam"},
 		{"Sesungguhnya shalat pada waktunya adalah kewajiban yang telah ditentukan atas orang-orang yang beriman.", "QS. An-Nisa: 103"},
 	},
-	"AdzanSubuh": {
+	AdzanSubuh: {
 		{"Sesungguhnya shalat Subuh itu disaksikan (oleh malaikat-malaikat malam dan malaikat-malaikat siang).", "QS. Al-Isra: 78"},
 		{"Barangsiapa shalat Shubuh berjama’ah, maka dia berada dalam jaminan Allah.", "HR. Muslim"},
 	},
-	"AdzanDzuhur": {
+	AdzanDzuhur: {
 		{"Jagalah (peliharalah) segala shalatmu dan (peliharalah) shalat wustha. Berdirilah untuk Allah (dalam shalatmu) dengan khusyuk.", "QS. Al-Baqarah: 238"},
 		{"Apabila kamu telah menyelesaikan shalat, ingatlah Allah ketika kamu berdiri, ketika kamu duduk dan ketika kamu berbaring.", "QS. An-Nisa: 103"},
 	},
-	"AdzanAshar": {
+	AdzanAshar: {
 		{"Barangsiapa meninggalkan shalat Ashar, maka seolah-olah dia telah kehilangan keluarga dan hartanya.", "HR. Bukhari dan Muslim"},
 		{"Shalat wustha adalah shalat Ashar. Siapa yang menjaganya, ia telah mendapat keberuntungan besar.", "HR. Tirmidzi"},
 	},
-	"AdzanMaghrib": {
+	AdzanMaghrib: {
 		{"Jika datang malam dari arah sini (timur) dan pergi siang dari arah sini (barat), serta terbenam matahari, maka sungguh orang yang puasa telah berbuka (waktunya Maghrib).", "HR. Bukhari dan Muslim"},
 		{"Allah tidak akan menyia-nyiakan pahala orang-orang yang berbuat baik.", "QS. Ali Imran: 171"},
 	},
-	"AdzanIsya": {
+	AdzanIsya: {
 		{"Barangsiapa yang shalat Isya' berjama'ah, maka seolah-olah ia telah shalat setengah malam.", "HR. Muslim"},
 		{"Shalat yang paling berat bagi orang munafik adalah shalat Isya' dan shalat Subuh.", "HR. Bukhari dan Muslim"},
 	},
 	// Quotes untuk notifikasi SETELAH Adzan (Mendorong segera menunaikan/mendirikan)
-	"SetelahAdzan": {
+	SetelahAdzan: {
 		{"Dirikanlah salat dan tunaikanlah zakat. Kebaikan apa pun yang kamu kerjakan untuk dirimu, kamu akan mendapatkannya (pahala) di sisi Allah.", "QS. Al-Baqarah: 110"},
 		{"Sesungguhnya orang-orang yang beriman itu hanyalah orang-orang yang apabila disebutkan Allah gemetarlah hati mereka, dan apabila dibacakan kepada mereka ayat-ayat-Nya, bertambahlah iman mereka.", "QS. Al-Anfal: 2 (Mengingatkan kewajiban setelah mendengar Adzan)"},
 		{"Dan mintalah pertolongan (kepada Allah) dengan sabar dan salat. Dan sesungguhnya yang demikian itu sungguh berat, kecuali bagi orang-orang yang khusyuk.", "QS. Al-Baqarah: 45"},
@@ -119,19 +128,19 @@ func getRandomQuote(category string) Quote {
 }
 
 // getPrayerQuoteEmbed membuat embed untuk kutipan ayat/hadits berdasarkan status waktu notifikasi
-func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool) DiscordEmbed {
+func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool) (result DiscordEmbed, categoryShalat string) {
 	var category string
 
 	// 🔥 LOGIKA BARU UNTUK QUOTE SPESIFIK SAAT ADZAN
-	if label == "Dhuha" {
-		category = "Dhuha"
+	if label == Dhuha {
+		category = Dhuha
 	} else if isAdzan {
 		// Jika tepat waktu Adzan, gunakan kategori spesifik (e.g., "AdzanSubuh")
 		category = "Adzan" + label
 	} else if isBefore {
-		category = "SebelumAdzan"
+		category = SebelumAdzan
 	} else if isAfter {
-		category = "SetelahAdzan"
+		category = SetelahAdzan
 	} else {
 		// Fallback: Untuk waktu Adzan yang tidak terdeteksi labelnya (seharusnya tidak terjadi)
 		category = "Adzan" + label
@@ -143,11 +152,11 @@ func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool
 		Color:       3447003, // Warna Biru (Blue)
 		Title:       "📖 Kutipan",
 		Description: fmt.Sprintf("> *%s*\n\n— %s", selected.Text, selected.Reference),
-	}
+	}, category
 }
 
 // sendWebhook mengirimkan pesan ke satu WebhookTarget
-func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, shalatTimeLabel string) WebhookResult {
+func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat string) WebhookResult {
 
 	result := WebhookResult{Name: target.Name}
 	now := time.Now()
@@ -157,13 +166,51 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, shalatTimeLabel st
 		result.Error = fmt.Errorf("webhook SKIPPED: Divisi IT is not active on weekends (Saturday/Sunday)")
 		return result
 	}
+	message := ""
+	switch categoryShalat {
+	case SebelumAdzan:
+		message = `
+$ system-event trigger shalat_prepare
+----------------------------------------
+ event: persiapan_shalat
+ status: reminder
+ message: Waktu shalat hampir tiba
+----------------------------------------
+>> Persiapkan diri & hentikan aktivitas.
+`
+	case SetelahAdzan:
+		message = `
+[Pipeline] stage("Adzan Alert")
+[INFO] Waktu shalat telah masuk...
+[INFO] Triggering: adzan_notification()
+[INFO] Actions:
+        - alert_user("Shalat time!")
+        - prepare_wudhu()
+        - pause_non_critical_tasks()
+[Pipeline] End stage("Adzan Alert")
+`
+	case Dhuha:
+		message = ""
 
-	// Payload utama Discord Webhook
-	payload := map[string]any{
-		"content": "╔═══[ 🚨 NOTIFICATION WAKTU SHALAT ]═══╗",
-		"embeds":  embeds,
+	default:
+		message = `
+[Pipeline] stage("Adzan Alert")
+[INFO] Waktu shalat telah masuk...
+[INFO] Triggering: adzan_notification()
+[INFO] Actions:
+        - pause_tasks()
+        - prepare_wudhu()
+        - notify_team("Shalat time!")
+[Pipeline] End stage("Adzan Alert")
+`
 	}
 
+	message += " \n\n\n"
+	// Payload utama Discord Webhook
+	payload := map[string]any{
+		"content": message,
+		"embeds":  embeds,
+	}
 	body, err := json.Marshal(payload)
 
 	if err != nil {
@@ -271,7 +318,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		}
 
 		isAdzanForQuote := isExactlyTime && label != "Dhuha"
-		quoteEmbed := getPrayerQuoteEmbed(label, isBefore, isAdzanForQuote, isAfter)
+		quoteEmbed, categoryShalat := getPrayerQuoteEmbed(label, isBefore, isAdzanForQuote, isAfter)
 
 		disclaimerEmbed := DiscordEmbed{
 			Color:       10070709, // Warna Ungu (Purple/Blurple)
@@ -301,7 +348,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 			// Panggil sendWebhook
 			// Perubahan sudah di sendWebhook untuk menggabungkan mention dan embed di satu pesan
-			result := sendWebhook(embedsToSend, currentTarget, label)
+			result := sendWebhook(embedsToSend, currentTarget, categoryShalat)
 
 			// Log hasil pengiriman
 			logMessage := fmt.Sprintf("%s at %s. Type: %s. Webhook: %s",
