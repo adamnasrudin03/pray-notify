@@ -161,6 +161,64 @@ func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool
 	}, category
 }
 
+func BuildShalatMessage(categoryShalat string) string {
+
+	var content string
+
+	switch categoryShalat {
+
+	case SebelumAdzan:
+		content = `
+$ system-event trigger shalat_prepare
+----------------------------------------
+ event: persiapan_shalat
+ status: reminder
+ message: Waktu shalat hampir tiba
+----------------------------------------
+>> Persiapkan diri & hentikan aktivitas.
+`
+
+	case SetelahAdzan:
+		content = `
+[Pipeline] stage("Adzan Alert")
+[INFO] Waktu shalat telah masuk...
+[INFO] Triggering: adzan_notification()
+[INFO] Actions:
+        - alert_user("Shalat time!")
+        - prepare_wudhu()
+        - pause_non_critical_tasks()
+[Pipeline] End stage("Adzan Alert")
+`
+
+	case Dhuha:
+		content = `
+[Pipeline] stage("Dhuha Alert")
+[INFO] Waktu Shalat Dhuha telah tiba...
+[INFO] Triggering: dhuha_notification()
+[INFO] Actions:
+        - alert_user("Shalat Dhuha time!")
+        - prepare_wudhu()
+        - pause_non_critical_tasks()
+[Pipeline] End stage("Dhuha Alert")
+`
+
+	default:
+		content = `
+[Pipeline] stage("Adzan Alert")
+[INFO] Waktu shalat telah masuk...
+[INFO] Triggering: adzan_notification()
+[INFO] Actions:
+        - pause_tasks()
+        - prepare_wudhu()
+        - notify_team("Shalat time!")
+[Pipeline] End stage("Adzan Alert")
+`
+	}
+
+	// Bungkus ke Discord code block ```txt
+	return fmt.Sprintf("```txt\n%s\n```", content)
+}
+
 // sendWebhook mengirimkan pesan ke satu WebhookTarget
 func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat string) WebhookResult {
 
@@ -172,44 +230,7 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 		result.Error = fmt.Errorf("webhook SKIPPED: Divisi IT is not active on weekends (Saturday/Sunday)")
 		return result
 	}
-	message := ""
-	switch categoryShalat {
-	case SebelumAdzan:
-		message = `
-$ system-event trigger shalat_prepare
-----------------------------------------
- event: persiapan_shalat
- status: reminder
- message: Waktu shalat hampir tiba
-----------------------------------------
->> Persiapkan diri & hentikan aktivitas.
-`
-	case SetelahAdzan:
-		message = `
-[Pipeline] stage("Adzan Alert")
-[INFO] Waktu shalat telah masuk...
-[INFO] Triggering: adzan_notification()
-[INFO] Actions:
-        - alert_user("Shalat time!")
-        - prepare_wudhu()
-        - pause_non_critical_tasks()
-[Pipeline] End stage("Adzan Alert")
-`
-	case Dhuha:
-		message = ""
-
-	default:
-		message = `
-[Pipeline] stage("Adzan Alert")
-[INFO] Waktu shalat telah masuk...
-[INFO] Triggering: adzan_notification()
-[INFO] Actions:
-        - pause_tasks()
-        - prepare_wudhu()
-        - notify_team("Shalat time!")
-[Pipeline] End stage("Adzan Alert")
-`
-	}
+	message := BuildShalatMessage(categoryShalat)
 
 	message += " \n\n\n"
 	// Payload utama Discord Webhook
