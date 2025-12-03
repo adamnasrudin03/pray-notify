@@ -238,6 +238,12 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 		"content": message,
 		"embeds":  embeds,
 	}
+	if target.Name == MyChannel {
+		payload = map[string]any{
+			"content": embeds,
+		}
+
+	}
 	body, err := json.Marshal(payload)
 
 	if err != nil {
