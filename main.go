@@ -238,12 +238,7 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 		"content": message,
 		"embeds":  embeds,
 	}
-	if target.Name == MyChannel {
-		payload = map[string]any{
-			"content": embeds,
-		}
 
-	}
 	body, err := json.Marshal(payload)
 
 	if err != nil {
@@ -303,12 +298,13 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 		} else if isBefore {
 			durationUntilShalat := shalatTime.Sub(now).Truncate(time.Second)
+			minutes := int(durationUntilShalat.Minutes())
 			embedColor = 16763904 // Warna Kuning (Pengingat)
 
 			if durationUntilShalat > 0 {
 				mainTitle = fmt.Sprintf("🕌 Adzan %s Akan Tiba!", label)
-				mainDescription = fmt.Sprintf("📢 @here Waktu Shalat akan berkumandang dalam **%s** (Pukul **%s**). Segera siapkan diri.",
-					durationUntilShalat.Truncate(time.Minute),
+				mainDescription = fmt.Sprintf("📢 @here Waktu Shalat akan berkumandang dalam **%d menit** (Pukul **%s**). Segera siapkan diri.",
+					minutes,
 					shalatTime.Format("15:04"),
 				)
 			} else {
