@@ -381,6 +381,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 	if absDuration < 0 {
 		absDuration = -absDuration
 	}
+	// Pastikan durasi dibulatkan ke menit terdekat sebelum diformat
 	absDuration = absDuration.Truncate(time.Minute)
 
 	// Tentukan apakah notifikasi tepat diwaktu "Adzan" (offset 0 menit atau untuk Dhuha)
@@ -414,9 +415,11 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 				)
 			} else {
 				mainTitle = fmt.Sprintf("🚨 ADZAN %s TELAH TIBA (Delayed)!", label)
-				mainDescription = fmt.Sprintf("📢 @here Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%v** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
+				// 🔥 FORMAT BARU UNTUK ABSDURATION DI ISBEFORE
+				formattedDurationBefore := fmt.Sprintf("%d menit", int(absDuration.Minutes()))
+				mainDescription = fmt.Sprintf("📢 @here Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%s** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
 					shalatTime.Format("15:04"),
-					absDuration,
+					formattedDurationBefore,
 				)
 			}
 
@@ -431,10 +434,13 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 				)
 			} else { // isAfter
 				mainTitle = fmt.Sprintf("✅ WAKTU SHALAT %s SEDANG BERLANGSUNG", label)
-				mainDescription = fmt.Sprintf("📢 @here Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%v** setelah Adzan. Saatnya Tunaikan Shalat.",
+				// 🔥 IMPLEMENTASI PERUBAHAN DI SINI:
+				// Ubah absDuration (time.Duration) menjadi string "X menit"
+				formattedDurationAfter := fmt.Sprintf("%d menit", int(absDuration.Minutes()))
+				mainDescription = fmt.Sprintf("📢 @here Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%s** setelah Adzan. Saatnya Tunaikan Shalat.",
 					label,
 					shalatTime.Format("15:04"),
-					absDuration,
+					formattedDurationAfter, // Menggunakan format "X menit"
 				)
 			}
 		}
