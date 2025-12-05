@@ -7,7 +7,6 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -17,6 +16,11 @@ import (
 type WebhookTarget struct {
 	Name string
 	URL  string
+	// Data Lokasi Spesifik
+	Lat  float64
+	Lon  float64
+	Tz   string // Timezone string, misal "Asia/Jakarta"
+	City string // Nama kota/lokasi untuk ditampilkan di footer
 }
 
 type DiscordEmbed struct {
@@ -54,37 +58,49 @@ const (
 
 var (
 	// Koordinat Lion Parcel Kedoya, Kebon Jeruk, Jakarta Barat
-	lat      = -6.189541191231946
-	lon      = 106.76490428724479
-	timezone = "Asia/Jakarta"
+	latDefault    = -6.189541191231946
+	lonDefault    = 106.76490428724479
+	tzAsiaJakarta = "Asia/Jakarta"
+	cityDefault   = "Kebon Jeruk, Jakarta Barat" // ** BARU **
 
-	// Daftar Webhook Target
+	// ** PERUBAHAN UTAMA DI SINI **
+	// Daftar Webhook Target dengan lokasi spesifik
 	webhookTargets = []WebhookTarget{
 		{
 			Name: DivisiIT,
 			URL:  "https://discord.com/api/webhooks/1443879495324008488/z-jzPBXv6vBvE45-QFrV-wwcIp8Qz9GtMw0bSQeKh1ltjHXZjcUPmjN3pMpS7Jg4yZJ0",
+			Lat:  latDefault,
+			Lon:  lonDefault,
+			Tz:   tzAsiaJakarta,
+			City: cityDefault,
 		},
 		{
 			Name: MyChannel,
 			URL:  "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix",
+			Lat:  latDefault,
+			Lon:  lonDefault,
+			Tz:   tzAsiaJakarta,
+			City: cityDefault,
 		},
 		{
 			Name: "Yusuf",
 			URL:  "https://discord.com/api/webhooks/1445697235231838208/UaQeKj2rS9tXdoDdB-SIMna_yfd2MKlPBlyOPWfUMIQlMvn0RM9CHjAOJ_XiB6dcygQx",
+			Lat:  latDefault,
+			Lon:  lonDefault,
+			Tz:   tzAsiaJakarta,
+			City: cityDefault,
 		},
 	}
 )
 
 // Koleksi Quotes berdasarkan kategori waktu (Tidak ada perubahan)
 var randomQuotes = map[string][]Quote{
-	// 🔥 Quote Khusus Dhuha
 	Dhuha: {
 		{"Dua rakaat shalat Dhuha setara dengan 360 sedekah yang diwajibkan atas setiap persendian tubuhmu.", "HR. Muslim"},
 		{"Barangsiapa shalat Dhuha dua belas rakaat, niscaya Allah membangunkan baginya istana di surga.", "HR. Tirmidzi & Ibnu Majah"},
 		{"Shalat Dhuha adalah shalat awwabin (orang-orang yang kembali taat), ketika anak unta kepanasan.", "HR. Muslim"},
 		{"Jadikan awal harimu penuh berkah dengan Shalat Dhuha. Rezeki menanti para hamba yang bertakwa.", "Nasehat Islam"},
 	},
-	// Quotes untuk notifikasi SEBELUM Adzan (Mendorong tepat waktu/persiapan)
 	SebelumAdzan: {
 		{"Jagalah shalat lima waktu, terutama shalat yang pertengahan (Ashar) dan berdirilah untuk Allah (dalam shalatmu) dengan khusyuk.", "QS. Al-Baqarah: 238"},
 		{"Shalat di awal waktu itu adalah amalan yang paling dicintai oleh Allah.", "HR. Bukhari dan Muslim"},
@@ -111,7 +127,6 @@ var randomQuotes = map[string][]Quote{
 		{"Barangsiapa yang shalat Isya' berjama'ah, maka seolah-olah ia telah shalat setengah malam.", "HR. Muslim"},
 		{"Shalat yang paling berat bagi orang munafik adalah shalat Isya' dan shalat Subuh.", "HR. Bukhari dan Muslim"},
 	},
-	// Quotes untuk notifikasi SETELAH Adzan (Mendorong segera menunaikan/mendirikan)
 	SetelahAdzan: {
 		{"Dirikanlah salat dan tunaikanlah zakat. Kebaikan apa pun yang kamu kerjakan untuk dirimu, kamu akan mendapatkannya (pahala) di sisi Allah.", "QS. Al-Baqarah: 110"},
 		{"Sesungguhnya orang-orang yang beriman itu hanyalah orang-orang yang apabila disebutkan Allah gemetarlah hati mereka, dan apabila dibacakan kepada mereka ayat-ayat-Nya, bertambahlah iman mereka.", "QS. Al-Anfal: 2 (Mengingatkan kewajiban setelah mendengar Adzan)"},
@@ -141,7 +156,6 @@ func getRandomQuote(category string) Quote {
 func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool) (result DiscordEmbed, categoryShalat string) {
 	var category string
 
-	// 🔥 LOGIKA BARU UNTUK QUOTE SPESIFIK SAAT ADZAN
 	if label == Dhuha {
 		category = Dhuha
 	} else if isAdzan {
@@ -165,6 +179,84 @@ func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool
 	}, category
 }
 
+var src = rand.NewSource(time.Now().UnixNano())
+var r = rand.New(src)
+
+func GetReminderByPrefix(prefix string) string {
+	reminders := map[string][]string{
+		Dhuha: {
+			"Waktu Dhuha telah masuk. Luangkan sedikit waktu untuk shalat Dhuha agar rezekimu hari ini diberi kelapangan dan keberkahan.",
+			"Sudah masuk waktu Dhuha. Di tengah aktivitasmu, sisihkan sejenak waktu untuk shalat Dhuha sebagai bentuk syukur atas nikmat Allah.",
+		},
+		Subuh: {
+			"Selamat pagi, semoga Allah memudahkan langkahmu. Jangan lupa shalat Subuh agar harimu diawali dengan keberkahan.",
+			"Shalat Subuh telah tiba. Mulailah harimu dengan sujud yang menenangkan jiwa dan mengundang keberkahan.",
+		},
+		Dzuhur: {
+			"Waktu Dzuhur sudah masuk. Istirahatlah sejenak dari kesibukan dan tenangkan hatimu dengan sujud kepada-Nya.",
+			"Dzuhur telah tiba. Di tengah rutinitas harian, jangan lupa memenuhi panggilan Allah.",
+		},
+		Ashar: {
+			"Ashar telah masuk. Saat yang tepat untuk menenangkan pikiran dan menyempurnakan kewajiban di tengah aktivitasmu.",
+			"Sudah masuk waktu Ashar. Segarkan kembali hati dan pikiranmu dengan shalat.",
+		},
+		Maghrib: {
+			"Maghrib telah tiba. Di waktu pergantian siang dan malam ini, jangan lewatkan kesempatan untuk mendekat kepada Allah.",
+			"Waktu Maghrib telah masuk. Semoga setiap sujudmu membawa ketenangan hati.",
+		},
+		Isya: {
+			"Isya telah masuk. Sempurnakan harimu dengan shalat sebelum beristirahat.",
+			"Sudah masuk waktu Isya. Tenangkan hatimu dan mintalah perlindungan untuk malam ini.",
+		},
+		"sebelum": {
+			"Waktu shalat sebentar lagi akan tiba. Bersiaplah untuk menunaikan ibadah dan sucikan dirimu.",
+			"Adzan akan berkumandang. Mari hentikan sejenak aktivitasmu dan persiapkan diri untuk shalat.",
+		},
+		"setelah": {
+			"Alhamdulillah. Bagi yang sudah shalat, semoga ibadahnya diterima. Bagi yang belum, mari bersegera tunaikan kewajiban. Kita doakan bersama, semoga Allah senantiasa membimbing hati kita menuju ketaatan.",
+			"Waktu shalat sedang berlangsung. Mari manfaatkan kesempatan ini; bagi yang sudah, syukuri nikmatnya. Bagi yang belum, segerakan dan semoga hidayah-Nya selalu menyertai langkah kita.",
+			"Istirahat sejenak untuk menunaikan shalat akan membawa ketenangan. Bagi yang telah selesai, jangan lupa berzikir. Bagi yang belum, mari segerakan. Semoga kita semua diringankan untuk memenuhi panggilan-Nya.",
+		},
+	}
+
+	general := []string{
+		"Sudah masuk waktu shalat. Sisihkan sebentar waktumu untuk menenangkan hati dan mengingat Allah.",
+		"Ini waktu yang baik untuk menghentikan aktivitas sejenak dan menunaikan shalat.",
+		"Jangan lupa menyempatkan diri untuk shalat. Semoga hatimu selalu dijaga dan dilapangkan.",
+	}
+
+	p := strings.ToLower(prefix)
+
+	var key string
+
+	switch {
+	case strings.Contains(p, "sebelum"):
+		key = "sebelum"
+	case strings.Contains(p, "setelah"):
+		key = "setelah"
+	case strings.HasPrefix(p, Dhuha):
+		key = Dhuha
+	case strings.HasPrefix(p, Subuh):
+		key = Subuh
+	case strings.HasPrefix(p, Dzuhur):
+		key = Dzuhur
+	case strings.HasPrefix(p, Ashar):
+		key = Ashar
+	case strings.HasPrefix(p, Maghrib):
+		key = Maghrib
+	case strings.HasPrefix(p, Isya):
+		key = Isya
+	default:
+		return general[r.Intn(len(general))]
+	}
+
+	if list, ok := reminders[key]; ok {
+		return list[r.Intn(len(list))]
+	}
+
+	return general[r.Intn(len(general))]
+}
+
 func BuildShalatMessage(categoryShalat string) string {
 
 	var content string
@@ -176,46 +268,47 @@ func BuildShalatMessage(categoryShalat string) string {
 $ system-event trigger shalat_prepare
 ----------------------------------------
  event: persiapan_shalat
- status: reminder
+ status: reminder_segera
  message: Waktu shalat hampir tiba
 ----------------------------------------
->> Persiapkan diri & hentikan aktivitas.
+>> Action: **Siapkan wudhu dan sucikan hati.**
+>> Status: Tugas yang tidak mendesak dapat ditangguhkan sementara.
 `
 
 	case SetelahAdzan:
 		content = `
-[Pipeline] stage("Adzan Alert")
-[INFO] Waktu shalat telah masuk...
-[INFO] Triggering: adzan_notification()
+[Pipeline] stage("Shalat Follow-up")
+[INFO] Notifikasi: Shalat sedang berlangsung
+[INFO] Status: +10 menit setelah adzan
 [INFO] Actions:
-        - alert_user("Shalat time!")
-        - prepare_wudhu()
-        - pause_non_critical_tasks()
-[Pipeline] End stage("Adzan Alert")
+    - **Cek Status:** Pastikan kewajiban shalat sudah tertunaikan.
+    - **Prioritas:** Menunaikan shalat adalah prioritas tertinggi saat ini.
+    - **Koordinasi:** Mohon saling mengingatkan sesama rekan kerja.
+[Pipeline] End stage("Shalat Follow-up")
 `
 
 	case Dhuha:
 		content = `
-[Pipeline] stage("Dhuha Alert")
-[INFO] Waktu Shalat Dhuha telah tiba...
+[Pipeline] stage("Dhuha Alert - Sunnah")
+[INFO] Notifikasi: Waktu Shalat Dhuha telah tiba (Sunnah)
 [INFO] Triggering: dhuha_notification()
 [INFO] Actions:
-        - alert_user("Shalat Dhuha time!")
-        - prepare_wudhu()
-        - pause_non_critical_tasks()
-[Pipeline] End stage("Dhuha Alert")
+    - **Tujuan:** Meraih keutamaan dan kelancaran rezeki harian.
+    - **Durasi:** Bisa ditunaikan sampai 15 menit sebelum Dzuhur.
+    - **Prioritas:** Luangkan waktu 5-10 menit.
+[Pipeline] End stage("Dhuha Alert - Sunnah")
 `
 
-	default:
+	default: // Digunakan untuk waktu Adzan (Subuh, Dzuhur, Ashar, Maghrib, Isya)
 		content = `
-[Pipeline] stage("Adzan Alert")
-[INFO] Waktu shalat telah masuk...
+[Pipeline] stage("Adzan Alert - Wajib")
+[INFO] Waktu shalat telah masuk (Fardhu)
 [INFO] Triggering: adzan_notification()
 [INFO] Actions:
-        - pause_tasks()
-        - prepare_wudhu()
-        - notify_team("Shalat time!")
-[Pipeline] End stage("Adzan Alert")
+    - **Prioritas:** Hentikan tugas dan penuhi panggilan-Nya.
+    - **Langkah:** Bersiap, berwudhu, menuju tempat shalat.
+    - **Penekanan:** Shalat di awal waktu lebih utama.
+[Pipeline] End stage("Adzan Alert - Wajib")
 `
 	}
 
@@ -225,7 +318,6 @@ $ system-event trigger shalat_prepare
 
 // sendWebhook mengirimkan pesan ke satu WebhookTarget
 func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat string) WebhookResult {
-
 	result := WebhookResult{Name: target.Name}
 	now := time.Now()
 
@@ -236,7 +328,7 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 	}
 
 	message := GetReminderByPrefix(categoryShalat)
-	message += " \n\n\n"
+	message += " \n"
 	message += BuildShalatMessage(categoryShalat)
 	message += " \n\n\n"
 
@@ -270,11 +362,16 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 	return result
 }
 
-// checkAndSend notifikasi
-func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time, offsetDuration time.Duration) {
+// checkAndSend notifikasi sekarang menerima WebhookTarget untuk mendapatkan info lokasi
+func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time, offsetDuration time.Duration, target WebhookTarget) {
 
-	loc, _ := time.LoadLocation(timezone)
-	now := time.Now().In(loc) // now sekarang adalah waktu WIB
+	// ** Gunakan Timezone dari target Webhook **
+	loc, err := time.LoadLocation(target.Tz)
+	if err != nil {
+		fmt.Printf("Error loading target timezone %s: %v\n", target.Tz, err)
+		return
+	}
+	now := time.Now().In(loc) // now sekarang adalah waktu lokal target
 
 	fiveMinutesAgo := now.Add(-5 * time.Minute)
 
@@ -291,6 +388,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 	// Tentukan apakah notifikasi setelah "Adzan" (offset positif)
 	isAfter := !isBefore && !isExactlyTime
 
+	// ** LOGIKA PENGIRIMAN: HANYA BERLAKU JIKA WAKTU NOTIFIKASI DI ANTARA 5 MENIT LALU HINGGA SEKARANG **
 	if notificationTime.After(fiveMinutesAgo) && (notificationTime.Before(now) || notificationTime.Equal(now)) {
 
 		var mainTitle string
@@ -341,7 +439,8 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 			}
 		}
 
-		wibLoc := time.FixedZone("WIB", 7*3600)
+		// Hitung zona waktu untuk footer (misal: "WIB")
+		zoneName, _ := now.Zone()
 
 		mainEmbed := DiscordEmbed{
 			Color:       embedColor,
@@ -349,7 +448,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 			Description: mainDescription,
 			Timestamp:   time.Now().Format(time.RFC3339),
 			Footer: &map[string]string{
-				"text": fmt.Sprintf("Lokasi: Kebon Jeruk, Jakarta Barat | Dihitung: %s WIB", time.Now().In(wibLoc).Format("02/01/2006 15:04")),
+				"text": fmt.Sprintf("Lokasi: %s | Dihitung: %s %s", target.City, time.Now().In(loc).Format("02/01/2006 15:04"), zoneName),
 			},
 		}
 
@@ -362,61 +461,56 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 			Description: "Pesan ini adalah pengingat otomatis. Kami menghormati keyakinan dan praktik ibadah Anda. Notifikasi ini ditujukan khusus bagi **Rekan Muslim yang menunaikan ibadah shalat**.",
 		}
 
-		// Loop dan Kirim ke Semua Webhook
-		for _, target := range webhookTargets {
+		// Siapkan array embed (min 3)
+		embedsToSend := []DiscordEmbed{mainEmbed, quoteEmbed}
 
-			// Siapkan array embed (min 3)
-			embedsToSend := []DiscordEmbed{mainEmbed, quoteEmbed}
+		coordinationDescription := "Mohon izin untuk saling mengingatkan dan mengkoordinasikan agar ibadah shalat dapat ditunaikan dengan tepat waktu. Terima kasih banyak atas perhatian dan kerjasamanya."
 
-			currentTarget := target
+		coordinationEmbed := DiscordEmbed{
+			Color:       15158332, // Warna Merah
+			Title:       "📢 Koordinasi Waktu Ibadah",
+			Description: coordinationDescription,
+		}
+		embedsToSend = append(embedsToSend, coordinationEmbed)
 
-			coordinationDescription := "Mohon izin untuk saling mengingatkan dan mengkoordinasikan agar ibadah shalat dapat ditunaikan dengan tepat waktu. Terima kasih banyak atas perhatian dan kerjasamanya."
+		// Tambahkan Disclaimer sebagai embed terakhir
+		embedsToSend = append(embedsToSend, disclaimerEmbed)
 
-			coordinationEmbed := DiscordEmbed{
-				Color:       15158332, // Warna Merah
-				Title:       "📢 Koordinasi Waktu Ibadah",
-				Description: coordinationDescription,
-			}
-			embedsToSend = append(embedsToSend, coordinationEmbed)
+		// Panggil sendWebhook
+		result := sendWebhook(embedsToSend, target, categoryShalat)
 
-			// Tambahkan Disclaimer sebagai embed terakhir
-			embedsToSend = append(embedsToSend, disclaimerEmbed)
-
-			// Panggil sendWebhook
-			// Perubahan sudah di sendWebhook untuk menggabungkan mention dan embed di satu pesan
-			result := sendWebhook(embedsToSend, currentTarget, categoryShalat)
-
-			// Log hasil pengiriman
-			logMessage := fmt.Sprintf("%s at %s. Type: %s. Webhook: %s",
-				label,
-				notificationTime.Format("15:04"),
-				func() string {
-					if isBefore {
-						return "SEBELUM"
-					} else if isExactlyTime {
-						return "SAAT MULAI"
-					} else {
-						return "SETELAH"
-					}
-				}(),
-				result.Name, // Nama Webhook
-			)
-
-			if result.Error != nil {
-				if strings.Contains(result.Error.Error(), "SKIPPED: Divisi IT") {
-					fmt.Printf("⏩ SKIPPED %s (WEEKEND) for Webhook: %s\n", label, result.Name)
+		// Log hasil pengiriman
+		logMessage := fmt.Sprintf("%s at %s (%s). Type: %s. Webhook: %s",
+			label,
+			notificationTime.Format("15:04"),
+			zoneName, // Tambahkan ZONA WAKTU di log
+			func() string {
+				if isBefore {
+					return "SEBELUM"
+				} else if isExactlyTime {
+					return "SAAT MULAI"
 				} else {
-					fmt.Printf("❌ Error sending message for %s. Error: %v\n", logMessage, result.Error)
+					return "SETELAH"
 				}
+			}(),
+			result.Name, // Nama Webhook
+		)
+
+		if result.Error != nil {
+			if strings.Contains(result.Error.Error(), "SKIPPED: Divisi IT") {
+				fmt.Printf("⏩ SKIPPED %s (WEEKEND) for Webhook: %s\n", label, result.Name)
 			} else {
-				fmt.Printf("✅ Successfully Sent message for %+v. Embeds: %+v.\n", logMessage, len(embedsToSend))
+				fmt.Printf("❌ Error sending message for %s. Error: %v\n", logMessage, result.Error)
 			}
+		} else {
+			fmt.Printf("✅ Successfully Sent message for %+v. Embeds: %+v.\n", logMessage, len(embedsToSend))
 		}
 
 	} else {
+		zoneName, _ := now.Zone()
 		// Logika SKIPPED
 		fmt.Printf(
-			"⏩ SKIPPED %s (%v %s Waktu). Waktu Mulai: %s. Waktu Notif Seharusnya: %s. Waktu Saat Ini: %s WIB.\n",
+			"⏩ SKIPPED %s (%v %s Waktu). Waktu Mulai: %s. Waktu Notif Seharusnya: %s. Waktu Saat Ini: %s %s.\n",
 			label,
 			absDuration,
 			func() string {
@@ -429,6 +523,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 			shalatTime.Format("15:04"),
 			notificationTime.Format("15:04:05"),
 			now.Format("15:04:05"),
+			zoneName, // Tampilkan zona waktu target di log
 		)
 	}
 }
@@ -436,64 +531,6 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 // ---------------------------------------------------------------------------------------
 
 func main() {
-	loc, err := time.LoadLocation(timezone)
-	if err != nil {
-		fmt.Printf("Error loading timezone: %v\n", err)
-		os.Exit(1)
-	}
-
-	today := time.Now().In(loc)
-	todayFormatted := today.Format("2006-01-02")
-
-	cfg := prayer.Config{
-		Latitude:  lat,
-		Longitude: lon,
-		Timezone:  loc,
-	}
-
-	schedules, err := prayer.Calculate(cfg, today.Year())
-	if err != nil {
-		fmt.Printf("Error calculating prayer schedule: %v\n", err)
-		os.Exit(1)
-	}
-
-	var schedule prayer.Schedule
-	found := false
-
-	for _, s := range schedules {
-		if s.Date == todayFormatted {
-			schedule = s
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		fmt.Println("Error: Today's schedule not found.")
-		os.Exit(1)
-	}
-
-	fajr := schedule.Fajr.In(loc)
-	sunrise := schedule.Sunrise.In(loc) // 🔥 Ambil waktu Sunrise
-	dhuhr := schedule.Zuhr.In(loc)
-	asr := schedule.Asr.In(loc)
-	maghrib := schedule.Maghrib.In(loc)
-	isha := schedule.Isha.In(loc)
-
-	// 🔥 HITUNG AWAL WAKTU DHUHA (18 menit setelah Sunrise)
-	dhuhaStart := sunrise.Add(18 * time.Minute)
-
-	prayerTimes := []struct {
-		label string
-		t     time.Time
-	}{
-		{Subuh, fajr},
-		{Dhuha, dhuhaStart}, // 🔥 Tambahkan Dhuha
-		{Dzuhur, dhuhr},
-		{Ashar, asr},
-		{Maghrib, maghrib},
-		{Isya, isha},
-	}
 
 	offsetsMain := []time.Duration{}
 	for m := -30; m <= 30; m += 5 {
@@ -505,114 +542,90 @@ func main() {
 		offsetsCaseSpecific = append(offsetsCaseSpecific, time.Duration(m)*time.Minute)
 	}
 
-	for _, prayer := range prayerTimes {
-		currentOffsets := offsetsMain
-		if prayer.label == Dhuha {
-			currentOffsets = offsetsCaseSpecific
+	// 1. Loop di setiap Webhook Target
+	for _, target := range webhookTargets {
+		fmt.Printf("\n--- Memproses Webhook Target: %s (%s) ---\n", target.Name, target.City)
+
+		// 2. Load Timezone spesifik target
+		loc, err := time.LoadLocation(target.Tz)
+		if err != nil {
+			fmt.Printf("Error loading timezone %s for %s: %v. Skipping target.\n", target.Tz, target.Name, err)
+			continue
 		}
 
-		for _, offset := range currentOffsets {
-			notificationTime := prayer.t.Add(offset)
+		today := time.Now().In(loc)
+		todayFormatted := today.Format("2006-01-02")
 
-			// 🔥 KHUSUS Dhuha: Hanya kirim notifikasi saat offset adalah 0 menit
-			if prayer.label == Dhuha && offset.Minutes() != 0 {
-				continue // Lewati reminder sebelum dan sesudah Dhuha
+		// 3. Hitung Jadwal Shalat untuk Target ini
+		cfg := prayer.Config{
+			Latitude:  target.Lat,
+			Longitude: target.Lon,
+			Timezone:  loc,
+		}
+
+		schedules, err := prayer.Calculate(cfg, today.Year())
+		if err != nil {
+			fmt.Printf("Error calculating prayer schedule for %s: %v. Skipping target.\n", target.Name, err)
+			continue
+		}
+
+		var schedule prayer.Schedule
+		found := false
+
+		for _, s := range schedules {
+			if s.Date == todayFormatted {
+				schedule = s
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			fmt.Printf("Error: Today's schedule not found for %s.\n", target.Name)
+			continue
+		}
+
+		// 4. Ambil waktu shalat dalam zona waktu target
+		fajr := schedule.Fajr.In(loc)
+		sunrise := schedule.Sunrise.In(loc)
+		dhuhr := schedule.Zuhr.In(loc)
+		asr := schedule.Asr.In(loc)
+		maghrib := schedule.Maghrib.In(loc)
+		isha := schedule.Isha.In(loc)
+
+		// 🔥 HITUNG AWAL WAKTU DHUHA (18 menit setelah Sunrise)
+		dhuhaStart := sunrise.Add(18 * time.Minute)
+
+		prayerTimes := []struct {
+			label string
+			t     time.Time
+		}{
+			{Subuh, fajr},
+			{Dhuha, dhuhaStart},
+			{Dzuhur, dhuhr},
+			{Ashar, asr},
+			{Maghrib, maghrib},
+			{Isya, isha},
+		}
+
+		// 5. Loop di setiap waktu shalat dan offset
+		for _, prayer := range prayerTimes {
+			currentOffsets := offsetsMain
+			if prayer.label == Dhuha {
+				currentOffsets = offsetsCaseSpecific
 			}
 
-			checkAndSend(notificationTime, prayer.label, prayer.t, offset)
+			for _, offset := range currentOffsets {
+				notificationTime := prayer.t.Add(offset)
+
+				// 🔥 KHUSUS Dhuha: Hanya kirim notifikasi saat offset adalah 0 menit
+				if prayer.label == Dhuha && offset.Minutes() != 0 {
+					continue // Lewati reminder sebelum dan sesudah Dhuha
+				}
+
+				// ** Panggil checkAndSend dengan target Webhook saat ini **
+				checkAndSend(notificationTime, prayer.label, prayer.t, offset, target)
+			}
 		}
 	}
-}
-
-// Inisialisasi sumber angka acak global (lebih modern dari rand.Seed)
-// Source disarankan diinisialisasi sekali per aplikasi.
-var src = rand.NewSource(time.Now().UnixNano())
-var r = rand.New(src)
-
-// GetReminderByPrefix: Menentukan jenis shalat dari prefix dan mengembalikan reminder acak.
-// Input contoh "AdzanDhuha" → output reminder dhuha
-func GetReminderByPrefix(prefix string) string {
-	// Daftar reminder per shalat
-	reminders := map[string][]string{
-		Dhuha: {
-			"Waktu Dhuha telah masuk. Luangkan sedikit waktu untuk shalat Dhuha agar rezekimu hari ini diberi kelapangan dan keberkahan.",
-			"Sudah masuk waktu Dhuha. Di tengah aktivitasmu, sisihkan sejenak waktu untuk shalat Dhuha sebagai bentuk syukur atas nikmat Allah.",
-		},
-		Subuh: {
-			"Selamat pagi, semoga Allah memudahkan langkahmu. Jangan lupa shalat Subuh agar harimu diawali dengan keberkahan.",
-			"Shalat Subuh telah tiba. Mulailah harimu dengan sujud yang menenangkan jiwa dan mengundang keberkahan.",
-		},
-		Dzuhur: {
-			"Waktu Dzuhur sudah masuk. Istirahatlah sejenak dari kesibukan dan tenangkan hatimu dengan sujud kepada-Nya.",
-			"Dzuhur telah tiba. Di tengah rutinitas harian, jangan lupa memenuhi panggilan Allah.",
-		},
-		Ashar: {
-			"Ashar telah masuk. Saat yang tepat untuk menenangkan pikiran dan menyempurnakan kewajiban di tengah aktivitasmu.",
-			"Sudah masuk waktu Ashar. Segarkan kembali hati dan pikiranmu dengan shalat.",
-		},
-		Maghrib: {
-			"Maghrib telah tiba. Di waktu pergantian siang dan malam ini, jangan lewatkan kesempatan untuk mendekat kepada Allah.",
-			"Waktu Maghrib telah masuk. Semoga setiap sujudmu membawa ketenangan hati.",
-		},
-		Isya: {
-			"Isya telah masuk. Sempurnakan harimu dengan shalat sebelum beristirahat.",
-			"Sudah masuk waktu Isya. Tenangkan hatimu dan mintalah perlindungan untuk malam ini.",
-		},
-		// Tambahan reminder untuk kasus Sebelum/Setelah Adzan (sesuaikan dengan kebutuhan spesifik Anda)
-		// Karena tidak ada data reminder baru yang diberikan, kita buat kunci baru
-		"sebelum": {
-			"Waktu shalat sebentar lagi akan tiba. Bersiaplah untuk menunaikan ibadah dan sucikan dirimu.",
-			"Adzan akan berkumandang. Mari hentikan sejenak aktivitasmu dan persiapkan diri untuk shalat.",
-		},
-		"setelah": {
-			"Setelah shalat, luangkan waktu sebentar untuk berzikir dan berdoa. Semoga ibadah kita diterima.",
-			"Alhamdulillah sudah menunaikan shalat. Jangan lupa beristighfar dan memohon ampunan-Nya.",
-		},
-	}
-
-	// Default general reminders jika prefix tidak cocok
-	general := []string{
-		"Sudah masuk waktu shalat. Sisihkan sebentar waktumu untuk menenangkan hati dan mengingat Allah.",
-		"Ini waktu yang baik untuk menghentikan aktivitas sejenak dan menunaikan shalat.",
-		"Jangan lupa menyempatkan diri untuk shalat. Semoga hatimu selalu dijaga dan dilapangkan.",
-	}
-
-	// Normalisasi prefix: semua huruf kecil
-	p := strings.ToLower(prefix)
-
-	var key string
-
-	// Switch–case baru menggunakan logika Contains atau HasPrefix
-	// Saya memilih HasPrefix karena mencocokkan kata kunci shalat dari awal input yang sudah dinormalisasi.
-	switch {
-	// 1. Kasus Khusus: Sebelum/Setelah Adzan
-	case strings.Contains(p, "sebelum"):
-		key = "sebelum"
-	case strings.Contains(p, "setelah"):
-		key = "setelah"
-	// 2. Kasus Waktu Shalat Utama (atau saat Adzan)
-	case strings.HasPrefix(p, Dhuha):
-		key = Dhuha
-	case strings.HasPrefix(p, Subuh):
-		key = Subuh
-	case strings.HasPrefix(p, Dzuhur):
-		key = Dzuhur
-	case strings.HasPrefix(p, Ashar):
-		key = Ashar
-	case strings.HasPrefix(p, Maghrib):
-		key = Maghrib
-	case strings.HasPrefix(p, Isya):
-		key = Isya
-	default:
-		// Jika tidak cocok → gunakan general reminder
-		return general[r.Intn(len(general))]
-	}
-
-	// Ambil reminder acak berdasarkan key
-	if list, ok := reminders[key]; ok {
-		return list[r.Intn(len(list))]
-	}
-
-	// Safety fallback
-	return general[r.Intn(len(general))]
 }
