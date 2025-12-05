@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"math/rand"
@@ -334,8 +335,10 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 
 	// Payload utama Discord Webhook
 	payload := map[string]any{
-		"content": message,
-		"embeds":  embeds,
+		"username":   "Adam Nasrudin",
+		"avatar_url": "https://media.discordapp.net/attachments/936166044748369930/1446540243993104546/DALLE_2024-10-28_14.40.34_-_A_fun_and_energetic_Discord_profile_picture_featuring_a_colorful_and_animated_character_with_a_playful_expression._The_character_has_vibrant_colors_b.png?ex=69345b15&is=69330995&hm=e3ee118fbc4faa7188af080d7e35b99031892b0f44ebe85205121d6836ba0972&=&format=webp&quality=lossless&width=810&height=810",
+		"content":    message,
+		"embeds":     embeds,
 	}
 
 	body, err := json.Marshal(payload)
@@ -361,6 +364,11 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 	}
 	return result
 }
+
+// checkAndSend notifikasi sekarang menerima WebhookTarget untuk mendapatkan info lokasi
+// Asumsi: Variabel global 'testingMode' (bool) dan 'testWebhookURL' (string) tersedia
+// di scope ini.
+var testingMode bool
 
 // checkAndSend notifikasi sekarang menerima WebhookTarget untuk mendapatkan info lokasi
 func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time, offsetDuration time.Duration, target WebhookTarget) {
@@ -390,7 +398,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 	isAfter := !isBefore && !isExactlyTime
 
 	// ** LOGIKA PENGIRIMAN: HANYA BERLAKU JIKA WAKTU NOTIFIKASI DI ANTARA 5 MENIT LALU HINGGA SEKARANG **
-	if notificationTime.After(fiveMinutesAgo) && (notificationTime.Before(now) || notificationTime.Equal(now)) {
+	if testingMode || (notificationTime.After(fiveMinutesAgo) && (notificationTime.Before(now) || notificationTime.Equal(now))) {
 
 		var mainTitle string
 		var mainDescription string
@@ -482,7 +490,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		// Tambahkan Disclaimer sebagai embed terakhir
 		embedsToSend = append(embedsToSend, disclaimerEmbed)
 
-		// Panggil sendWebhook
+		// Panggil sendWebhook. Jika testingMode=true, target.URL sudah diganti di atas
 		result := sendWebhook(embedsToSend, target, categoryShalat)
 
 		// Log hasil pengiriman
@@ -499,7 +507,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 					return "SETELAH"
 				}
 			}(),
-			result.Name, // Nama Webhook
+			result.Name, // Nama Webhook (akan berisi [TESTING] jika diaktifkan)
 		)
 
 		if result.Error != nil {
@@ -535,9 +543,127 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 }
 
 // ---------------------------------------------------------------------------------------
+func runTesting() {
+	if !testingMode {
+		return
+	}
+
+	// Definisikan offsets yang akan digunakan dalam mode testing, mirip dengan mode normal
+	offsetsMain := []time.Duration{}
+	for m := -5; m <= 350; m += 5 {
+		offsetsMain = append(offsetsMain, time.Duration(m)*time.Minute)
+	}
+
+	offsetsCaseSpecific := []time.Duration{}
+	for m := -5; m <= 5; m += 1 {
+		offsetsCaseSpecific = append(offsetsCaseSpecific, time.Duration(m)*time.Minute)
+	}
+
+	fmt.Println("==================================================================================")
+	fmt.Printf("!!! MODE TESTING AKTIF: Semua notifikasi akan dialihkan ke Webhook Testing (%s) !!!\n", MyChannel)
+	fmt.Println("==================================================================================")
+
+	// Hanya loop pada target yang sama dengan MyChannel untuk mendapatkan jadwal shalat
+	for _, target := range webhookTargets {
+		if target.Name != MyChannel {
+			continue
+		}
+		fmt.Printf("\n--- Memproses Webhook Target: %s (%s) ---\n", target.Name, target.City)
+
+		// 2. Load Timezone spesifik target
+		loc, err := time.LoadLocation(target.Tz)
+		if err != nil {
+			fmt.Printf("Error loading timezone %s for %s: %v. Skipping target.\n", target.Tz, target.Name, err)
+			continue
+		}
+
+		today := time.Now().In(loc)
+		todayFormatted := today.Format("2006-01-02")
+
+		// 3. Hitung Jadwal Shalat untuk Target ini
+		cfg := prayer.Config{
+			Latitude:  target.Lat,
+			Longitude: target.Lon,
+			Timezone:  loc,
+		}
+
+		schedules, err := prayer.Calculate(cfg, today.Year())
+		if err != nil {
+			fmt.Printf("Error calculating prayer schedule for %s: %v. Skipping target.\n", target.Name, err)
+			continue
+		}
+
+		var schedule prayer.Schedule
+		found := false
+
+		for _, s := range schedules {
+			if s.Date == todayFormatted {
+				schedule = s
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			fmt.Printf("Error: Today's schedule not found for %s.\n", target.Name)
+			continue
+		}
+
+		// 4. Ambil waktu shalat dalam zona waktu target
+		fajr := schedule.Fajr.In(loc)
+		sunrise := schedule.Sunrise.In(loc)
+		dhuhr := schedule.Zuhr.In(loc)
+		asr := schedule.Asr.In(loc)
+		maghrib := schedule.Maghrib.In(loc)
+		isha := schedule.Isha.In(loc)
+
+		// 🔥 HITUNG AWAL WAKTU DHUHA (18 menit setelah Sunrise)
+		dhuhaStart := sunrise.Add(18 * time.Minute)
+
+		prayerTimes := []struct {
+			label string
+			t     time.Time
+		}{
+			{Subuh, fajr},
+			{Dhuha, dhuhaStart}, // Tambahkan Dhuha di sini untuk testing
+			{Dzuhur, dhuhr},
+			{Ashar, asr},
+			{Maghrib, maghrib},
+			{Isya, isha},
+		}
+
+		// 5. Loop di setiap waktu shalat dan offset
+		for _, prayer := range prayerTimes {
+			currentOffsets := offsetsMain
+			// Gunakan offsetsCaseSpecific untuk Dhuha
+			if prayer.label == Dhuha {
+				currentOffsets = offsetsCaseSpecific
+			}
+
+			for _, offset := range currentOffsets {
+				notificationTime := prayer.t.Add(offset)
+
+				if offset.Minutes() != 0 {
+					continue
+				}
+
+				// jika testingMode=true dan target adalah target yang sedang diproses.
+				checkAndSend(notificationTime, prayer.label, prayer.t, offset, target)
+				time.Sleep(1 * time.Minute)
+			}
+		}
+		break
+	}
+
+}
 
 func main() {
+	// Pendaftaran flag: -test
+	flag.BoolVar(&testingMode, "test", false, "Aktifkan mode testing, kirim semua notifikasi ke testWebhookURL.")
+	flag.Parse()
+	runTesting()
 
+	// Definisikan offsets yang akan digunakan dalam mode testing, mirip dengan mode normal
 	offsetsMain := []time.Duration{}
 	for m := -30; m <= 30; m += 5 {
 		offsetsMain = append(offsetsMain, time.Duration(m)*time.Minute)
