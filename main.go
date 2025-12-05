@@ -38,6 +38,12 @@ type Quote struct {
 }
 
 const (
+	MyUsername = "Adam Nasrudin (@adamnasrudin)"
+	MyAvatar   = "https://media.discordapp.net/attachments/936166044748369930/1446540243993104546/DALLE_2024-10-28_14.40.34_-_A_fun_and_energetic_Discord_profile_picture_featuring_a_colorful_and_animated_character_with_a_playful_expression._The_character_has_vibrant_colors_b.png?ex=69345b15&is=69330995&hm=e3ee118fbc4faa7188af080d7e35b99031892b0f44ebe85205121d6836ba0972&=&format=webp&quality=lossless&width=810&height=810"
+
+	Test        = "Testing"
+	TestAvaatar = "https://media.discordapp.net/attachments/936166044748369930/1446540244781367441/DALLE_2024-10-28_14.42.11_-_A_fun_and_colorful_Discord_banner_to_match_an_energetic_profile_picture_featuring_a_playful_and_vibrant_scene._The_banner_includes_a_gradient_backgro.png?ex=69345b15&is=69330995&hm=b45fe7ca9ada4123096cadf404bb03ad8380d0ad212c3e5c2410bff233509917&=&format=webp&quality=lossless&width=1416&height=809"
+
 	DivisiIT  = "Divisi IT"
 	MyChannel = "My Channel"
 
@@ -58,14 +64,14 @@ const (
 )
 
 var (
+	testingMode bool
 	// Koordinat Lion Parcel Kedoya, Kebon Jeruk, Jakarta Barat
 	latDefault    = -6.189541191231946
 	lonDefault    = 106.76490428724479
 	tzAsiaJakarta = "Asia/Jakarta"
 	cityDefault   = "Kebon Jeruk, Jakarta Barat" // ** BARU **
 
-	// ** PERUBAHAN UTAMA DI SINI **
-	// Daftar Webhook Target dengan lokasi spesifik
+	// Daftar Webhook Target dengan lokasi spesifik (tidak diubah)
 	webhookTargets = []WebhookTarget{
 		{
 			Name: DivisiIT,
@@ -94,7 +100,6 @@ var (
 	}
 )
 
-// Koleksi Quotes berdasarkan kategori waktu (Tidak ada perubahan)
 var randomQuotes = map[string][]Quote{
 	Dhuha: {
 		{"Dua rakaat shalat Dhuha setara dengan 360 sedekah yang diwajibkan atas setiap persendian tubuhmu.", "HR. Muslim"},
@@ -142,7 +147,7 @@ type WebhookResult struct {
 	Error error
 }
 
-// getRandomQuote memilih quote secara acak berdasarkan kategori waktu
+// getRandomQuote memilih quote secara acak berdasarkan kategori waktu (Tidak ada perubahan)
 func getRandomQuote(category string) Quote {
 	quotes, ok := randomQuotes[category]
 	if !ok || len(quotes) == 0 {
@@ -153,7 +158,7 @@ func getRandomQuote(category string) Quote {
 	return quotes[randomIndex]
 }
 
-// getPrayerQuoteEmbed membuat embed untuk kutipan ayat/hadits berdasarkan status waktu notifikasi
+// getPrayerQuoteEmbed membuat embed untuk kutipan ayat/hadits berdasarkan status waktu notifikasi (Tidak ada perubahan)
 func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool) (result DiscordEmbed, categoryShalat string) {
 	var category string
 
@@ -259,57 +264,56 @@ func GetReminderByPrefix(prefix string) string {
 }
 
 func BuildShalatMessage(categoryShalat string) string {
-
 	var content string
 
 	switch categoryShalat {
 
 	case SebelumAdzan:
 		content = `
-$ system-event trigger shalat_prepare
+$ sistem-acara picu persiapan_shalat
 ----------------------------------------
- event: persiapan_shalat
- status: reminder_segera
- message: Waktu shalat hampir tiba
+ acara: persiapan_shalat
+ status: pengingat_segera
+ pesan: Waktu shalat hampir tiba
 ----------------------------------------
->> Action: **Siapkan wudhu dan sucikan hati.**
->> Status: Tugas yang tidak mendesak dapat ditangguhkan sementara.
+>> Tindakan: **Ambil wudhu dan sucikan hati.**
+>> Status: Tugas yang tidak mendesak dapat ditunda sementara.
 `
 
 	case SetelahAdzan:
 		content = `
-[Pipeline] stage("Shalat Follow-up")
+[Alur Kerja] tahap("Tindak Lanjut Shalat")
 [INFO] Notifikasi: Shalat sedang berlangsung
 [INFO] Status: +10 menit setelah adzan
-[INFO] Actions:
+[INFO] Tindakan:
     - **Cek Status:** Pastikan kewajiban shalat sudah tertunaikan.
     - **Prioritas:** Menunaikan shalat adalah prioritas tertinggi saat ini.
     - **Koordinasi:** Mohon saling mengingatkan sesama rekan kerja.
-[Pipeline] End stage("Shalat Follow-up")
+[Alur Kerja] Selesai tahap("Tindak Lanjut Shalat")
 `
 
 	case Dhuha:
 		content = `
-[Pipeline] stage("Dhuha Alert - Sunnah")
+[Alur Kerja] tahap("Peringatan Dhuha - Sunnah")
 [INFO] Notifikasi: Waktu Shalat Dhuha telah tiba (Sunnah)
-[INFO] Triggering: dhuha_notification()
-[INFO] Actions:
+[INFO] Pemicu: notifikasi_dhuha()
+[INFO] Tindakan:
     - **Tujuan:** Meraih keutamaan dan kelancaran rezeki harian.
     - **Durasi:** Bisa ditunaikan sampai 15 menit sebelum Dzuhur.
     - **Prioritas:** Luangkan waktu 5-10 menit.
-[Pipeline] End stage("Dhuha Alert - Sunnah")
+[Alur Kerja] Selesai tahap("Peringatan Dhuha - Sunnah")
 `
 
 	default: // Digunakan untuk waktu Adzan (Subuh, Dzuhur, Ashar, Maghrib, Isya)
 		content = `
-[Pipeline] stage("Adzan Alert - Wajib")
+[Alur Kerja] tahap("Peringatan Adzan - Wajib")
 [INFO] Waktu shalat telah masuk (Fardhu)
-[INFO] Triggering: adzan_notification()
-[INFO] Actions:
+[INFO] Pemicu: notifikasi_adzan()
+[INFO] Tindakan:
     - **Prioritas:** Hentikan tugas dan penuhi panggilan-Nya.
     - **Langkah:** Bersiap, berwudhu, menuju tempat shalat.
     - **Penekanan:** Shalat di awal waktu lebih utama.
-[Pipeline] End stage("Adzan Alert - Wajib")
+[Alur Kerja] Selesai tahap("Peringatan Adzan - Wajib")
 `
 	}
 
@@ -324,7 +328,8 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 
 	// 🛑 VALIDASI 1: Cek Hari Libur/Weekend untuk Webhook "Divisi IT"
 	if target.Name == DivisiIT && (now.Weekday() == time.Saturday || now.Weekday() == time.Sunday) {
-		result.Error = fmt.Errorf("webhook SKIPPED: Divisi IT is not active on weekends (Saturday/Sunday)")
+		// Mengganti pesan error
+		result.Error = fmt.Errorf("webhook DILEWATI: Divisi IT tidak aktif di akhir pekan (Sabtu/Minggu)")
 		return result
 	}
 
@@ -333,50 +338,55 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 	message += BuildShalatMessage(categoryShalat)
 	message += " \n\n\n"
 
-	// Payload utama Discord Webhook
+	// Payload utama Discord Webhook (Field-field ini tetap 'username', 'content', dll. karena itu adalah kunci JSON Discord)
 	payload := map[string]any{
-		"username":   "Adam Nasrudin",
-		"avatar_url": "https://media.discordapp.net/attachments/936166044748369930/1446540243993104546/DALLE_2024-10-28_14.40.34_-_A_fun_and_energetic_Discord_profile_picture_featuring_a_colorful_and_animated_character_with_a_playful_expression._The_character_has_vibrant_colors_b.png?ex=69345b15&is=69330995&hm=e3ee118fbc4faa7188af080d7e35b99031892b0f44ebe85205121d6836ba0972&=&format=webp&quality=lossless&width=810&height=810",
-		"content":    message,
-		"embeds":     embeds,
+		"content": message,
+		"embeds":  embeds,
+	}
+
+	if strings.HasPrefix(categoryShalat, "adzan") {
+		payload["tts"] = true
+	}
+
+	if strings.HasPrefix(categoryShalat, "sebelum") {
+		payload["username"] = MyUsername
+		payload["avatar_url"] = MyAvatar
+	}
+
+	if testingMode {
+		payload["username"] = Test
+		payload["avatar_url"] = TestAvaatar
 	}
 
 	body, err := json.Marshal(payload)
 
 	if err != nil {
-		result.Error = fmt.Errorf("marshalling failed: %w", err)
+		result.Error = fmt.Errorf("proses konversi JSON (marshalling) gagal: %w", err)
 		return result
 	}
 
-	// Kirim HANYA SATU request HTTP POST
 	resp, err := http.Post(target.URL, "application/json", bytes.NewBuffer(body))
 
 	bodyBytes, _ := io.ReadAll(resp.Body)
 	bodyString := string(bodyBytes)
 
 	if err != nil {
-		result.Error = fmt.Errorf("HTTP post failed: %w", err)
+		result.Error = fmt.Errorf("permintaan HTTP post gagal: %w", err)
 	} else {
 		if resp.StatusCode >= 300 {
-			result.Error = fmt.Errorf("status code %d", resp.StatusCode)
-			fmt.Printf("Error sending webhook to %s: %+v\n", target.Name, bodyString)
+			result.Error = fmt.Errorf("kode status %d", resp.StatusCode)
+			fmt.Printf("Gagal mengirim webhook ke %s: %+v\n", target.Name, bodyString)
 		}
 	}
 	return result
 }
 
-// checkAndSend notifikasi sekarang menerima WebhookTarget untuk mendapatkan info lokasi
-// Asumsi: Variabel global 'testingMode' (bool) dan 'testWebhookURL' (string) tersedia
-// di scope ini.
-var testingMode bool
-
-// checkAndSend notifikasi sekarang menerima WebhookTarget untuk mendapatkan info lokasi
 func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time, offsetDuration time.Duration, target WebhookTarget) {
 
 	// ** Gunakan Timezone dari target Webhook **
 	loc, err := time.LoadLocation(target.Tz)
 	if err != nil {
-		fmt.Printf("Error loading target timezone %s: %v\n", target.Tz, err)
+		fmt.Printf("Error memuat zona waktu target %s: %v\n", target.Tz, err)
 		return
 	}
 	now := time.Now().In(loc) // now sekarang adalah waktu lokal target
@@ -422,8 +432,8 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 					shalatTime.Format("15:04"),
 				)
 			} else {
-				mainTitle = fmt.Sprintf("🚨 ADZAN %s TELAH TIBA (Delayed)!", label)
-				// 🔥 FORMAT BARU UNTUK ABSDURATION DI ISBEFORE
+				mainTitle = fmt.Sprintf("🚨 ADZAN %s TELAH TIBA (Tertunda)!", label)
+				// FORMAT BARU UNTUK ABSDURATION DI ISBEFORE
 				formattedDurationBefore := fmt.Sprintf("%d menit", int(absDuration.Minutes()))
 				mainDescription = fmt.Sprintf("📢 @here Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%s** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
 					shalatTime.Format("15:04"),
@@ -442,7 +452,6 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 				)
 			} else { // isAfter
 				mainTitle = fmt.Sprintf("✅ WAKTU SHALAT %s SEDANG BERLANGSUNG", label)
-				// 🔥 IMPLEMENTASI PERUBAHAN DI SINI:
 				// Ubah absDuration (time.Duration) menjadi string "X menit"
 				formattedDurationAfter := fmt.Sprintf("%d menit", int(absDuration.Minutes()))
 				mainDescription = fmt.Sprintf("📢 @here Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%s** setelah Adzan. Saatnya Tunaikan Shalat.",
@@ -490,11 +499,11 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		// Tambahkan Disclaimer sebagai embed terakhir
 		embedsToSend = append(embedsToSend, disclaimerEmbed)
 
-		// Panggil sendWebhook. Jika testingMode=true, target.URL sudah diganti di atas
+		// Panggil sendWebhook
 		result := sendWebhook(embedsToSend, target, categoryShalat)
 
 		// Log hasil pengiriman
-		logMessage := fmt.Sprintf("%s at %s (%s). Type: %s. Webhook: %s",
+		logMessage := fmt.Sprintf("%s pada %s (%s). Tipe: %s. Webhook: %s",
 			label,
 			notificationTime.Format("15:04"),
 			zoneName, // Tambahkan ZONA WAKTU di log
@@ -511,20 +520,20 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		)
 
 		if result.Error != nil {
-			if strings.Contains(result.Error.Error(), "SKIPPED: Divisi IT") {
-				fmt.Printf("⏩ SKIPPED %s (WEEKEND) for Webhook: %s\n", label, result.Name)
+			if strings.Contains(result.Error.Error(), "DILEWATI: Divisi IT") {
+				fmt.Printf("⏩ DILEWATI %s (AKHIR PEKAN) untuk Webhook: %s\n", label, result.Name)
 			} else {
-				fmt.Printf("❌ Error sending message for %s. Error: %v\n", logMessage, result.Error)
+				fmt.Printf("❌ Gagal mengirim pesan untuk %s. Error: %v\n", logMessage, result.Error)
 			}
 		} else {
-			fmt.Printf("✅ Successfully Sent message for %+v. Embeds: %+v.\n", logMessage, len(embedsToSend))
+			fmt.Printf("✅ Berhasil Mengirim pesan untuk %+v. Embeds: %+v.\n", logMessage, len(embedsToSend))
 		}
 
 	} else {
 		zoneName, _ := now.Zone()
-		// Logika SKIPPED
+		// Logika DILEWATI
 		fmt.Printf(
-			"⏩ SKIPPED %s (%v %s Waktu). Waktu Mulai: %s. Waktu Notif Seharusnya: %s. Waktu Saat Ini: %s %s.\n",
+			"⏩ DILEWATI %s (%v Waktu %s). Waktu Mulai: %s. Waktu Notif Seharusnya: %s. Waktu Saat Ini: %s %s.\n",
 			label,
 			absDuration,
 			func() string {
@@ -560,7 +569,7 @@ func runTesting() {
 	}
 
 	fmt.Println("==================================================================================")
-	fmt.Printf("!!! MODE TESTING AKTIF: Semua notifikasi akan dialihkan ke Webhook Testing (%s) !!!\n", MyChannel)
+	fmt.Printf("!!! MODE UJI COBA AKTIF: Semua notifikasi akan dialihkan ke Webhook Testing !!!\n")
 	fmt.Println("==================================================================================")
 
 	// Hanya loop pada target yang sama dengan MyChannel untuk mendapatkan jadwal shalat
@@ -568,12 +577,12 @@ func runTesting() {
 		if target.Name != MyChannel {
 			continue
 		}
-		fmt.Printf("\n--- Memproses Webhook Target: %s (%s) ---\n", target.Name, target.City)
+		fmt.Printf("\n--- Memproses Target Webhook: %s (%s) ---\n", target.Name, target.City)
 
 		// 2. Load Timezone spesifik target
 		loc, err := time.LoadLocation(target.Tz)
 		if err != nil {
-			fmt.Printf("Error loading timezone %s for %s: %v. Skipping target.\n", target.Tz, target.Name, err)
+			fmt.Printf("Error memuat zona waktu %s untuk %s: %v. Melewati target.\n", target.Tz, target.Name, err)
 			continue
 		}
 
@@ -589,7 +598,7 @@ func runTesting() {
 
 		schedules, err := prayer.Calculate(cfg, today.Year())
 		if err != nil {
-			fmt.Printf("Error calculating prayer schedule for %s: %v. Skipping target.\n", target.Name, err)
+			fmt.Printf("Error menghitung jadwal shalat untuk %s: %v. Melewati target.\n", target.Name, err)
 			continue
 		}
 
@@ -605,7 +614,7 @@ func runTesting() {
 		}
 
 		if !found {
-			fmt.Printf("Error: Today's schedule not found for %s.\n", target.Name)
+			fmt.Printf("Error: Jadwal hari ini tidak ditemukan untuk %s.\n", target.Name)
 			continue
 		}
 
@@ -659,7 +668,7 @@ func runTesting() {
 
 func main() {
 	// Pendaftaran flag: -test
-	flag.BoolVar(&testingMode, "test", false, "Aktifkan mode testing, kirim semua notifikasi ke testWebhookURL.")
+	flag.BoolVar(&testingMode, "test", false, "Aktifkan mode uji coba, kirim semua notifikasi ke testWebhookURL.")
 	flag.Parse()
 	runTesting()
 
@@ -676,12 +685,12 @@ func main() {
 
 	// 1. Loop di setiap Webhook Target
 	for _, target := range webhookTargets {
-		fmt.Printf("\n--- Memproses Webhook Target: %s (%s) ---\n", target.Name, target.City)
+		fmt.Printf("\n--- Memproses Target Webhook: %s (%s) ---\n", target.Name, target.City)
 
 		// 2. Load Timezone spesifik target
 		loc, err := time.LoadLocation(target.Tz)
 		if err != nil {
-			fmt.Printf("Error loading timezone %s for %s: %v. Skipping target.\n", target.Tz, target.Name, err)
+			fmt.Printf("Error memuat zona waktu %s untuk %s: %v. Melewati target.\n", target.Tz, target.Name, err)
 			continue
 		}
 
@@ -697,7 +706,7 @@ func main() {
 
 		schedules, err := prayer.Calculate(cfg, today.Year())
 		if err != nil {
-			fmt.Printf("Error calculating prayer schedule for %s: %v. Skipping target.\n", target.Name, err)
+			fmt.Printf("Error menghitung jadwal shalat untuk %s: %v. Melewati target.\n", target.Name, err)
 			continue
 		}
 
@@ -713,7 +722,7 @@ func main() {
 		}
 
 		if !found {
-			fmt.Printf("Error: Today's schedule not found for %s.\n", target.Name)
+			fmt.Printf("Error: Jadwal hari ini tidak ditemukan untuk %s.\n", target.Name)
 			continue
 		}
 
@@ -750,9 +759,9 @@ func main() {
 			for _, offset := range currentOffsets {
 				notificationTime := prayer.t.Add(offset)
 
-				// 🔥 KHUSUS Dhuha: Hanya kirim notifikasi saat offset adalah 0 menit
+				// KHUSUS Dhuha: Hanya kirim notifikasi saat offset adalah 0 menit
 				if prayer.label == Dhuha && offset.Minutes() != 0 {
-					continue // Lewati reminder sebelum dan sesudah Dhuha
+					continue // Lewati pengingat sebelum dan sesudah Dhuha
 				}
 
 				// ** Panggil checkAndSend dengan target Webhook saat ini **
