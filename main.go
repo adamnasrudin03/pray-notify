@@ -36,12 +36,12 @@ const (
 	DivisiIT  = "Divisi IT"
 	MyChannel = "My Channel"
 
-	Dhuha   = "Dhuha"
-	Subuh   = "Subuh"
-	Dzuhur  = "Dzuhur"
-	Ashar   = "Ashar"
-	Maghrib = "Maghrib"
-	Isya    = "Isya"
+	Dhuha   = "dhuha"
+	Subuh   = "subuh"
+	Dzuhur  = "dzuhur"
+	Ashar   = "ashar"
+	Maghrib = "maghrib"
+	Isya    = "isya"
 
 	SebelumAdzan = "SebelumAdzan"
 	AdzanSubuh   = "AdzanSubuh"
@@ -234,9 +234,12 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 		result.Error = fmt.Errorf("webhook SKIPPED: Divisi IT is not active on weekends (Saturday/Sunday)")
 		return result
 	}
-	message := BuildShalatMessage(categoryShalat)
 
+	message := GetReminderByPrefix(categoryShalat)
 	message += " \n\n\n"
+	message += BuildShalatMessage(categoryShalat)
+	message += " \n\n\n"
+
 	// Payload utama Discord Webhook
 	payload := map[string]any{
 		"content": message,
