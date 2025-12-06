@@ -696,6 +696,11 @@ func main() {
 
 		today := time.Now().In(loc)
 		todayFormatted := today.Format("2006-01-02")
+		// 🛑 VALIDASI 1: Cek Hari Libur/Weekend untuk Webhook "Divisi IT"
+		if target.Name == DivisiIT && (today.Weekday() == time.Saturday || today.Weekday() == time.Sunday) {
+			fmt.Println("webhook DILEWATI: Divisi IT tidak aktif di akhir pekan (Sabtu/Minggu)")
+			continue
+		}
 
 		// 3. Hitung Jadwal Shalat untuk Target ini
 		cfg := prayer.Config{
