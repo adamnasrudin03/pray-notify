@@ -284,7 +284,7 @@ $ sistem-acara picu persiapan_shalat
 		content = `
 [Alur Kerja] tahap("Tindak Lanjut Shalat")
 [INFO] Notifikasi: Shalat sedang berlangsung
-[INFO] Status: +10 menit setelah adzan
+[INFO] Status: Pengingat tindak lanjut setelah Adzan berkumandang
 [INFO] Tindakan:
     - **Cek Status:** Pastikan kewajiban shalat sudah tertunaikan.
     - **Prioritas:** Menunaikan shalat adalah prioritas tertinggi saat ini.
