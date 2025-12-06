@@ -15,8 +15,9 @@ import (
 )
 
 type WebhookTarget struct {
-	Name string
-	URL  string
+	Name     string
+	URL      string
+	Mentions string
 	// Data Lokasi Spesifik
 	Lat  float64
 	Lon  float64
@@ -82,12 +83,13 @@ var (
 			City: cityDefault,
 		},
 		{
-			Name: MyChannel,
-			URL:  "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix",
-			Lat:  latDefault,
-			Lon:  lonDefault,
-			Tz:   tzAsiaJakarta,
-			City: cityDefault,
+			Name:     MyChannel,
+			URL:      "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix",
+			Lat:      latDefault,
+			Lon:      lonDefault,
+			Tz:       tzAsiaJakarta,
+			City:     cityDefault,
+			Mentions: "@apran6594 @adamnasrudin",
 		},
 		{
 			Name: "Yusuf",
@@ -337,7 +339,9 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 	message += " \n"
 	message += BuildShalatMessage(categoryShalat)
 	message += " \n\n\n"
-
+	if target.Name == MyChannel {
+		message += "Cc: " + target.Mentions
+	}
 	// Payload utama Discord Webhook (Field-field ini tetap 'username', 'content', dll. karena itu adalah kunci JSON Discord)
 	payload := map[string]any{
 		"content": message,
