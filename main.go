@@ -348,7 +348,7 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 		payload["tts"] = true
 	}
 
-	if strings.HasPrefix(categoryShalat, "sebelum") {
+	if categoryShalat == SebelumAdzan {
 		payload["username"] = MyUsername
 		payload["avatar_url"] = MyAvatar
 	}
