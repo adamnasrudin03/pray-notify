@@ -334,7 +334,7 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 		result.Error = fmt.Errorf("webhook DILEWATI: Divisi IT tidak aktif di akhir pekan (Sabtu/Minggu)")
 		return result
 	}
-	message := "📢 @here "
+	message := "📢 @here \n"
 	message += GetReminderByPrefix(categoryShalat)
 	message += " \n"
 	message += BuildShalatMessage(categoryShalat)
