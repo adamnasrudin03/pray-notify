@@ -346,10 +346,7 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 	payload := map[string]any{
 		"content": message,
 		"embeds":  embeds,
-	}
-
-	if strings.HasPrefix(categoryShalat, "adzan") {
-		payload["tts"] = true
+		"tts":     true,
 	}
 
 	if categoryShalat == SebelumAdzan {
