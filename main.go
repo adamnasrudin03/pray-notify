@@ -323,6 +323,7 @@ func sendWebhook(embeds []models.DiscordEmbed, target models.WebhookTarget, cate
 	if isAdzan && mentions != "" {
 		message += "Cc: " + mentions
 	}
+
 	// Payload utama Discord Webhook (Field-field ini tetap 'username', 'content', dll. karena itu adalah kunci JSON Discord)
 	payload := map[string]any{
 		"content": message,
