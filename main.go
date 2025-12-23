@@ -375,14 +375,14 @@ func sendWebhook(label string, embeds []models.DiscordEmbed, target models.Webho
 }
 
 func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time, offsetDuration time.Duration, target models.WebhookTarget) {
-	// ** Gunakan Timezone dari target Webhook **
+	// Gunakan Timezone dari target Webhook
 	loc, err := time.LoadLocation(target.Tz)
 	if err != nil {
 		fmt.Printf("Error memuat zona waktu target %s: %v\n", target.Tz, err)
 		return
 	}
-	now := time.Now().In(loc) // now sekarang adalah waktu lokal target
 
+	now := time.Now().In(loc)
 	fiveMinutesAgo := now.Add(-5 * time.Minute)
 
 	isBefore := offsetDuration < 0
@@ -391,70 +391,73 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 	if absDuration < 0 {
 		absDuration = -absDuration
 	}
-	// Pastikan durasi dibulatkan ke menit terdekat sebelum diformat
 	absDuration = absDuration.Truncate(time.Minute)
 
-	// Tentukan apakah notifikasi tepat diwaktu "Adzan" (offset 0 menit atau untuk Dhuha)
 	isExactlyTime := absDuration.Minutes() < 1
-	// Tentukan apakah notifikasi setelah "Adzan" (offset positif)
 	isAfter := !isBefore && !isExactlyTime
 
-	// ** LOGIKA PENGIRIMAN: HANYA BERLAKU JIKA WAKTU NOTIFIKASI DI ANTARA 5 MENIT LALU HINGGA SEKARANG **
+	// Kirim hanya jika dalam window waktu yang valid
 	if testingMode || (notificationTime.After(fiveMinutesAgo) && (notificationTime.Before(now) || notificationTime.Equal(now))) {
 
 		var mainTitle string
 		var mainDescription string
-		var embedColor int // Warna dalam format desimal
+		var embedColor int
 
-		// 🔥 LOGIKA KHUSUS UNTUK DHUHA
+		// 🔥 KHUSUS DHUHA
 		if label == "Dhuha" {
-			embedColor = 16763904 // Warna Kuning/Emas untuk Sunnah
-			mainTitle = "✨ WAKTU SHALAT DHUHA DIMULAI!"
-			mainDescription = fmt.Sprintf("📢 @here Shalat Dhuha sudah dapat ditunaikan mulai Pukul **%s**. Mari raih keutamaan sunnah untuk kelancaran rezeki dan aktivitas harian.", shalatTime.Format("15:04"))
+			embedColor = 16763904 // Kuning
+			mainTitle = "✨ Waktu Shalat Dhuha Telah Dimulai"
+			mainDescription = fmt.Sprintf(
+				"📢 @here Shalat Dhuha dapat ditunaikan mulai **pukul %s WIB**. Semoga membawa keberkahan dan kelancaran dalam aktivitas hari ini.",
+				shalatTime.Format("15:04"),
+			)
 
 		} else if isBefore {
 			durationUntilShalat := shalatTime.Sub(now).Truncate(time.Second)
 			minutes := int(durationUntilShalat.Minutes())
-			embedColor = 16763904 // Warna Kuning (Pengingat)
+			embedColor = 16763904 // Kuning
 
 			if durationUntilShalat > 0 {
-				mainTitle = fmt.Sprintf("🕌 Adzan %s Akan Tiba!", label)
-				mainDescription = fmt.Sprintf("📢 @here Waktu Shalat akan berkumandang dalam **%d menit** (Pukul **%s**). Segera siapkan diri.",
+				mainTitle = fmt.Sprintf("🕌 Adzan %s Akan Segera Tiba", label)
+				mainDescription = fmt.Sprintf(
+					"📢 @here Adzan %s akan berkumandang dalam **%d menit** (pukul **%s WIB**). Mari bersiap untuk menunaikan shalat.",
+					label,
 					minutes,
 					shalatTime.Format("15:04"),
 				)
 			} else {
-				mainTitle = fmt.Sprintf("🚨 ADZAN %s TELAH TIBA (Tertunda)!", label)
-				// FORMAT BARU UNTUK ABSDURATION DI ISBEFORE
 				formattedDurationBefore := fmt.Sprintf("%d menit", int(absDuration.Minutes()))
-				mainDescription = fmt.Sprintf("📢 @here Adzan telah berkumandang (Pukul **%s**). Mohon maaf, pengingat **%s** sebelum Adzan tertunda. Segera Tunaikan Shalat.",
+				mainTitle = fmt.Sprintf("⚠️ Adzan %s Telah Berlangsung", label)
+				mainDescription = fmt.Sprintf(
+					"📢 @here Adzan %s telah berkumandang pada **pukul %s WIB**. Mohon maaf, pengingat **%s** sebelum adzan terkirim terlambat. Silakan segera menunaikan shalat.",
+					label,
 					shalatTime.Format("15:04"),
 					formattedDurationBefore,
 				)
 			}
 
 		} else {
-			embedColor = 5814783 // Warna Hijau (Waktu Salat Berlangsung)
+			embedColor = 5814783 // Hijau
 
 			if isExactlyTime {
-				mainTitle = fmt.Sprintf("📢 WAKTU ADZAN %s", label)
-				mainDescription = fmt.Sprintf("🔊 @here Adzan %s telah berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
+				mainTitle = fmt.Sprintf("🔊 Waktu Adzan %s", label)
+				mainDescription = fmt.Sprintf(
+					"📢 @here Adzan %s telah berkumandang pada **pukul %s WIB**. Mari bersiap untuk menunaikan shalat.",
 					label,
 					shalatTime.Format("15:04"),
 				)
-			} else { // isAfter
-				mainTitle = fmt.Sprintf("✅ WAKTU SHALAT %s SEDANG BERLANGSUNG", label)
-				// Ubah absDuration (time.Duration) menjadi string "X menit"
+			} else {
 				formattedDurationAfter := fmt.Sprintf("%d menit", int(absDuration.Minutes()))
-				mainDescription = fmt.Sprintf("📢 @here Shalat %s sudah dimulai (Pukul **%s**). Ini adalah notifikasi **%s** setelah Adzan. Saatnya Tunaikan Shalat.",
+				mainTitle = fmt.Sprintf("✅ Waktu Shalat %s Sedang Berlangsung", label)
+				mainDescription = fmt.Sprintf(
+					"📢 @here Shalat %s telah dimulai pada **pukul %s WIB**. Notifikasi ini dikirim **%s setelah adzan** sebagai pengingat untuk menunaikan shalat.",
 					label,
 					shalatTime.Format("15:04"),
-					formattedDurationAfter, // Menggunakan format "X menit"
+					formattedDurationAfter,
 				)
 			}
 		}
 
-		// Hitung zona waktu untuk footer (misal: "WIB")
 		zoneName, _ := now.Zone()
 
 		mainEmbed := models.DiscordEmbed{
@@ -463,7 +466,12 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 			Description: mainDescription,
 			Timestamp:   time.Now().Format(time.RFC3339),
 			Footer: &map[string]string{
-				"text": fmt.Sprintf("Lokasi: %s | Dihitung: %s %s", target.City, time.Now().In(loc).Format("02/01/2006 15:04"), zoneName),
+				"text": fmt.Sprintf(
+					"📍 %s | %s %s",
+					target.City,
+					time.Now().In(loc).Format("02/01/2006 15:04"),
+					zoneName,
+				),
 			},
 		}
 
@@ -471,44 +479,42 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		quoteEmbed, categoryShalat := getPrayerQuoteEmbed(label, isBefore, isAdzanForQuote, isAfter)
 
 		disclaimerEmbed := models.DiscordEmbed{
-			Color:       10070709, // Warna Ungu (Purple/Blurple)
-			Title:       "✨ Catatan",
-			Description: "Pesan ini adalah pengingat otomatis. Kami menghormati keyakinan dan praktik ibadah Anda. Notifikasi ini ditujukan khusus bagi **Rekan Muslim yang menunaikan ibadah shalat**.",
+			Color: 10070709,
+			Title: "✨ Catatan",
+			Description: "Pesan ini merupakan pengingat otomatis. Kami menghormati setiap keyakinan dan praktik ibadah. " +
+				"Notifikasi ini ditujukan bagi **Rekan Muslim yang menunaikan ibadah shalat**.",
 		}
-
-		// Siapkan array embed (min 3)
-		embedsToSend := []models.DiscordEmbed{mainEmbed, quoteEmbed}
-
-		coordinationDescription := "Mohon izin untuk saling mengingatkan dan mengkoordinasikan agar ibadah shalat dapat ditunaikan dengan tepat waktu. Terima kasih banyak atas perhatian dan kerjasamanya."
 
 		coordinationEmbed := models.DiscordEmbed{
-			Color:       15158332, // Warna Merah
-			Title:       "📢 Koordinasi Waktu Ibadah",
-			Description: coordinationDescription,
+			Color: 15158332,
+			Title: "📢 Koordinasi Waktu Ibadah",
+			Description: "Mohon izin untuk saling mengingatkan dan menyesuaikan aktivitas agar ibadah shalat dapat ditunaikan tepat waktu. " +
+				"Terima kasih atas perhatian dan kerja samanya.",
 		}
-		embedsToSend = append(embedsToSend, coordinationEmbed)
 
-		// Tambahkan Disclaimer sebagai embed terakhir
-		embedsToSend = append(embedsToSend, disclaimerEmbed)
+		embedsToSend := []models.DiscordEmbed{
+			mainEmbed,
+			quoteEmbed,
+			coordinationEmbed,
+			disclaimerEmbed,
+		}
 
-		// Panggil sendWebhook
 		result := sendWebhook(label, embedsToSend, target, categoryShalat)
 
-		// Log hasil pengiriman
-		logMessage := fmt.Sprintf("%s pada %s (%s). Tipe: %s. Webhook: %s",
+		logMessage := fmt.Sprintf(
+			"%s pada %s (%s). Tipe: %s. Webhook: %s",
 			label,
 			notificationTime.Format("15:04"),
-			zoneName, // Tambahkan ZONA WAKTU di log
+			zoneName,
 			func() string {
 				if isBefore {
 					return "SEBELUM"
 				} else if isExactlyTime {
 					return "SAAT MULAI"
-				} else {
-					return "SETELAH"
 				}
+				return "SETELAH"
 			}(),
-			result.Name, // Nama Webhook (akan berisi [TESTING] jika diaktifkan)
+			result.Name,
 		)
 
 		if result.Error != nil {
@@ -518,27 +524,25 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 				fmt.Printf("❌ Gagal mengirim pesan untuk %s. Error: %v\n", logMessage, result.Error)
 			}
 		} else {
-			fmt.Printf("✅ Berhasil Mengirim pesan untuk %+v. Embeds: %+v.\n", logMessage, len(embedsToSend))
+			fmt.Printf("✅ Berhasil mengirim pesan untuk %s. Total embeds: %d\n", logMessage, len(embedsToSend))
 		}
 
 	} else {
 		zoneName, _ := now.Zone()
-		// Logika DILEWATI
 		fmt.Printf(
-			"⏩ DILEWATI %s (%v Waktu %s). Waktu Mulai: %s. Waktu Notif Seharusnya: %s. Waktu Saat Ini: %s %s.\n",
+			"⏩ DILEWATI %s (%v Waktu %s). Waktu Shalat: %s. Waktu Notif: %s. Sekarang: %s %s\n",
 			label,
 			absDuration,
 			func() string {
 				if isBefore {
 					return "SEBELUM"
-				} else {
-					return "SETELAH"
 				}
+				return "SETELAH"
 			}(),
 			shalatTime.Format("15:04"),
 			notificationTime.Format("15:04:05"),
 			now.Format("15:04:05"),
-			zoneName, // Tampilkan zona waktu target di log
+			zoneName,
 		)
 	}
 }
