@@ -1,6 +1,8 @@
 package models
 
 import (
+	"slices"
+
 	"github.com/adamnasrudin03/pray-notify/helpers"
 )
 
@@ -106,12 +108,40 @@ func GetRandomMemberDivIT(total int) string {
 		return helpers.GetRandomString(total, GetDiscordUserIDDivIT())
 	}
 	result := ""
-	result += helpers.GetRandomString(1, GetDiscordUserIDManagerDivIT()) + " "
-	result += helpers.GetRandomString(1, GetDiscordUserIDSreDivIT()) + " "
-	result += helpers.GetRandomString(1, GetDiscordUserIDSdetDivIT()) + " "
-	result += helpers.GetRandomString(1, GetDiscordUserIDPeDivIT()) + " "
-	result += helpers.GetRandomString(1, GetDiscordUserIDForceDivIT()) + " "
 
-	result += helpers.GetRandomString(total-5, GetDiscordUserIDDivIT())
+	// Collect already selected user IDs
+	var alreadySelected []string
+
+	selectedManager := helpers.GetRandomString(1, GetDiscordUserIDManagerDivIT())
+	result += selectedManager + " "
+	alreadySelected = append(alreadySelected, selectedManager)
+
+	selectedSre := helpers.GetRandomString(1, GetDiscordUserIDSreDivIT())
+	result += selectedSre + " "
+	alreadySelected = append(alreadySelected, selectedSre)
+
+	selectedSdet := helpers.GetRandomString(1, GetDiscordUserIDSdetDivIT())
+	result += selectedSdet + " "
+	alreadySelected = append(alreadySelected, selectedSdet)
+
+	selectedPe := helpers.GetRandomString(1, GetDiscordUserIDPeDivIT())
+	result += selectedPe + " "
+	alreadySelected = append(alreadySelected, selectedPe)
+
+	selectedForce := helpers.GetRandomString(1, GetDiscordUserIDForceDivIT())
+	result += selectedForce + " "
+	alreadySelected = append(alreadySelected, selectedForce)
+
+	// Filter out already selected IDs from the full list
+	allUserIDs := GetDiscordUserIDDivIT()
+	var availableUserIDs []string
+	for _, userID := range allUserIDs {
+		isAlreadySelected := slices.Contains(alreadySelected, userID)
+		if !isAlreadySelected {
+			availableUserIDs = append(availableUserIDs, userID)
+		}
+	}
+
+	result += helpers.GetRandomString(total-5, availableUserIDs)
 	return result
 }
