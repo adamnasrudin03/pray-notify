@@ -32,13 +32,13 @@ const (
 	Maghrib = "maghrib"
 	Isya    = "isya"
 
-	SebelumAdzan = "SebelumAdzan"
+	SebelumAdzan = "Sebelum"
 	AdzanSubuh   = "AdzanSubuh"
 	AdzanDzuhur  = "AdzanDzuhur"
 	AdzanAshar   = "AdzanAshar"
 	AdzanMaghrib = "AdzanMaghrib"
 	AdzanIsya    = "AdzanIsya"
-	SetelahAdzan = "SetelahAdzan"
+	SetelahAdzan = "Setelah"
 )
 
 var (
