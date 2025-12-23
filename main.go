@@ -32,14 +32,20 @@ const (
 	Maghrib = "maghrib"
 	Isya    = "isya"
 
-	SebelumAdzan = "Sebelum"
+	SebelumAdzan = "SebelumAdzan"
 	AdzanSubuh   = "AdzanSubuh"
 	AdzanDzuhur  = "AdzanDzuhur"
 	AdzanAshar   = "AdzanAshar"
 	AdzanMaghrib = "AdzanMaghrib"
 	AdzanIsya    = "AdzanIsya"
-	SetelahAdzan = "Setelah"
+	SetelahAdzan = "SetelahAdzan"
 )
+
+func isAdzanInProgress(c string) bool {
+	return strings.Contains(c, "Adzan") &&
+		!strings.Contains(c, "Sebelum") &&
+		!strings.Contains(c, "Setelah")
+}
 
 var (
 	testingMode bool
@@ -315,12 +321,11 @@ func sendWebhook(embeds []models.DiscordEmbed, target models.WebhookTarget, cate
 	message += BuildShalatMessage(categoryShalat)
 	message += " \n\n\n"
 
-	isAdzan := strings.Contains(categoryShalat, "Adzan")
 	mentions := target.Mentions
 	if target.Name == DivisiIT {
 		mentions = models.GetRandomMemberDivIT(5)
 	}
-	if isAdzan && mentions != "" {
+	if isAdzanInProgress(categoryShalat) && mentions != "" {
 		message += "Cc: " + mentions
 	}
 
