@@ -89,7 +89,7 @@ var (
 			Lon:      lonDefault,
 			Tz:       tzAsiaJakarta,
 			City:     cityDefault,
-			Mentions: "@apran6594 @adamnasrudin",
+			Mentions: "@873083047501787156 <@873083047501787156>",
 		},
 		{
 			Name: "Yusuf",
@@ -187,8 +187,10 @@ func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool
 	}, category
 }
 
-var src = rand.NewSource(time.Now().UnixNano())
-var r = rand.New(src)
+var (
+	src = rand.NewSource(time.Now().UnixNano())
+	r   = rand.New(src)
+)
 
 func GetReminderByPrefix(prefix string) string {
 	reminders := map[string][]string{
@@ -360,7 +362,6 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 	}
 
 	body, err := json.Marshal(payload)
-
 	if err != nil {
 		result.Error = fmt.Errorf("proses konversi JSON (marshalling) gagal: %w", err)
 		return result
@@ -383,7 +384,6 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 }
 
 func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time, offsetDuration time.Duration, target WebhookTarget) {
-
 	// ** Gunakan Timezone dari target Webhook **
 	loc, err := time.LoadLocation(target.Tz)
 	if err != nil {
@@ -664,7 +664,6 @@ func runTesting() {
 		}
 		break
 	}
-
 }
 
 func main() {
