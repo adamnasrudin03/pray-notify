@@ -572,9 +572,11 @@ func runTesting() {
 
 		// 3. Hitung Jadwal Shalat untuk Target ini
 		cfg := prayer.Config{
-			Latitude:  target.Lat,
-			Longitude: target.Lon,
-			Timezone:  loc,
+			Latitude:           target.Lat,
+			Longitude:          target.Lon,
+			Timezone:           loc,
+			TwilightConvention: prayer.Kemenag(),
+			AsrConvention:      prayer.Shafii,
 		}
 
 		schedules, err := prayer.Calculate(cfg, today.Year())
