@@ -540,7 +540,7 @@ func runTesting() {
 
 	// Definisikan offsets yang akan digunakan dalam mode testing, mirip dengan mode normal
 	offsetsMain := []time.Duration{}
-	for m := -5; m <= 350; m += 5 {
+	for m := -5; m <= 30; m += 5 {
 		offsetsMain = append(offsetsMain, time.Duration(m)*time.Minute)
 	}
 
