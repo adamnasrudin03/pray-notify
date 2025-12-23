@@ -305,7 +305,7 @@ $ sistem-acara picu persiapan_shalat
 }
 
 // sendWebhook mengirimkan pesan ke satu WebhookTarget
-func sendWebhook(embeds []models.DiscordEmbed, target models.WebhookTarget, categoryShalat string) WebhookResult {
+func sendWebhook(label string, embeds []models.DiscordEmbed, target models.WebhookTarget, categoryShalat string) WebhookResult {
 	result := WebhookResult{Name: target.Name}
 	now := time.Now()
 
@@ -322,10 +322,16 @@ func sendWebhook(embeds []models.DiscordEmbed, target models.WebhookTarget, cate
 	message += " \n\n\n"
 
 	mentions := target.Mentions
-	if target.Name == DivisiIT {
-		mentions = models.GetRandomMemberDivIT(5)
+	isAdzanWork := map[string]bool{
+		Dzuhur:  true,
+		Ashar:   true,
+		Maghrib: true,
 	}
-	if isAdzanInProgress(categoryShalat) && mentions != "" {
+	if target.Name == DivisiIT && isAdzanInProgress(categoryShalat) && isAdzanWork[label] {
+		mentions = models.GetRandomMemberDivIT(7)
+	}
+
+	if mentions != "" {
 		message += "Cc: " + mentions
 	}
 
@@ -486,7 +492,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		embedsToSend = append(embedsToSend, disclaimerEmbed)
 
 		// Panggil sendWebhook
-		result := sendWebhook(embedsToSend, target, categoryShalat)
+		result := sendWebhook(label, embedsToSend, target, categoryShalat)
 
 		// Log hasil pengiriman
 		logMessage := fmt.Sprintf("%s pada %s (%s). Tipe: %s. Webhook: %s",
