@@ -11,32 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adamnasrudin03/pray-notify/models"
 	"github.com/hablullah/go-prayer"
 )
-
-type WebhookTarget struct {
-	Name     string
-	URL      string
-	Mentions string
-	// Data Lokasi Spesifik
-	Lat  float64
-	Lon  float64
-	Tz   string // Timezone string, misal "Asia/Jakarta"
-	City string // Nama kota/lokasi untuk ditampilkan di footer
-}
-
-type DiscordEmbed struct {
-	Color       int                `json:"color"`
-	Title       string             `json:"title"`
-	Description string             `json:"description"`
-	Timestamp   string             `json:"timestamp"`
-	Footer      *map[string]string `json:"footer,omitempty"`
-}
-
-type Quote struct {
-	Text      string
-	Reference string
-}
 
 const (
 	MyUsername = "Adam Nasrudin (@adamnasrudin)"
@@ -67,42 +44,38 @@ const (
 var (
 	testingMode bool
 	// Koordinat Lion Parcel Kedoya, Kebon Jeruk, Jakarta Barat
-	latDefault    = -6.189541191231946
-	lonDefault    = 106.76490428724479
-	tzAsiaJakarta = "Asia/Jakarta"
-	cityDefault   = "Kebon Jeruk, Jakarta Barat" // ** BARU **
 
 	// Daftar Webhook Target dengan lokasi spesifik (tidak diubah)
-	webhookTargets = []WebhookTarget{
+	webhookTargets = []models.WebhookTarget{
 		{
 			Name: DivisiIT,
 			URL:  "https://discord.com/api/webhooks/1443879495324008488/z-jzPBXv6vBvE45-QFrV-wwcIp8Qz9GtMw0bSQeKh1ltjHXZjcUPmjN3pMpS7Jg4yZJ0",
-			Lat:  latDefault,
-			Lon:  lonDefault,
-			Tz:   tzAsiaJakarta,
-			City: cityDefault,
+			Lat:  models.DefaultLat,
+			Lon:  models.DefaultLon,
+			Tz:   models.DefaultTz,
+			City: models.DefaultCity,
 		},
 		{
-			Name:     MyChannel,
-			URL:      "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix",
-			Lat:      latDefault,
-			Lon:      lonDefault,
-			Tz:       tzAsiaJakarta,
-			City:     cityDefault,
-			Mentions: "@873083047501787156 <@873083047501787156>",
+			Name: MyChannel,
+			URL:  "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix",
+			Lat:  models.DefaultLat,
+			Lon:  models.DefaultLon,
+			Tz:   models.DefaultTz,
+			City: models.DefaultCity,
 		},
 		{
-			Name: "Yusuf",
-			URL:  "https://discord.com/api/webhooks/1445697235231838208/UaQeKj2rS9tXdoDdB-SIMna_yfd2MKlPBlyOPWfUMIQlMvn0RM9CHjAOJ_XiB6dcygQx",
-			Lat:  latDefault,
-			Lon:  lonDefault,
-			Tz:   tzAsiaJakarta,
-			City: cityDefault,
+			Name:     "Yusuf",
+			URL:      "https://discord.com/api/webhooks/1445697235231838208/UaQeKj2rS9tXdoDdB-SIMna_yfd2MKlPBlyOPWfUMIQlMvn0RM9CHjAOJ_XiB6dcygQx",
+			Lat:      models.DefaultLat,
+			Lon:      models.DefaultLon,
+			Tz:       models.DefaultTz,
+			City:     models.DefaultCity,
+			Mentions: "<@1211900014595407883>",
 		},
 	}
 )
 
-var randomQuotes = map[string][]Quote{
+var randomQuotes = map[string][]models.Quote{
 	Dhuha: {
 		{"Dua rakaat shalat Dhuha setara dengan 360 sedekah yang diwajibkan atas setiap persendian tubuhmu.", "HR. Muslim"},
 		{"Barangsiapa shalat Dhuha dua belas rakaat, niscaya Allah membangunkan baginya istana di surga.", "HR. Tirmidzi & Ibnu Majah"},
@@ -150,10 +123,10 @@ type WebhookResult struct {
 }
 
 // getRandomQuote memilih quote secara acak berdasarkan kategori waktu (Tidak ada perubahan)
-func getRandomQuote(category string) Quote {
+func getRandomQuote(category string) models.Quote {
 	quotes, ok := randomQuotes[category]
 	if !ok || len(quotes) == 0 {
-		return Quote{Text: "Dirikanlah salat dan tunaikanlah zakat.", Reference: "QS. Al-Baqarah: 110"} // Default
+		return models.Quote{Text: "Dirikanlah salat dan tunaikanlah zakat.", Reference: "QS. Al-Baqarah: 110"} // Default
 	}
 
 	randomIndex := rand.Intn(len(quotes))
@@ -161,7 +134,7 @@ func getRandomQuote(category string) Quote {
 }
 
 // getPrayerQuoteEmbed membuat embed untuk kutipan ayat/hadits berdasarkan status waktu notifikasi (Tidak ada perubahan)
-func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool) (result DiscordEmbed, categoryShalat string) {
+func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool) (result models.DiscordEmbed, categoryShalat string) {
 	var category string
 
 	if label == Dhuha {
@@ -180,7 +153,7 @@ func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool
 
 	selected := getRandomQuote(category)
 
-	return DiscordEmbed{
+	return models.DiscordEmbed{
 		Color:       3447003, // Warna Biru (Blue)
 		Title:       "📖 Kutipan",
 		Description: fmt.Sprintf("> *%s*\n\n— %s", selected.Text, selected.Reference),
@@ -326,7 +299,7 @@ $ sistem-acara picu persiapan_shalat
 }
 
 // sendWebhook mengirimkan pesan ke satu WebhookTarget
-func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat string) WebhookResult {
+func sendWebhook(embeds []models.DiscordEmbed, target models.WebhookTarget, categoryShalat string) WebhookResult {
 	result := WebhookResult{Name: target.Name}
 	now := time.Now()
 
@@ -341,8 +314,14 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 	message += " \n"
 	message += BuildShalatMessage(categoryShalat)
 	message += " \n\n\n"
-	if target.Name == MyChannel {
-		message += "Cc: " + target.Mentions
+
+	isAdzan := strings.Contains(categoryShalat, "Adzan")
+	mentions := target.Mentions
+	if target.Name == DivisiIT {
+		mentions = models.GetRandomMemberDivIT(5)
+	}
+	if isAdzan && mentions != "" {
+		message += "Cc: " + mentions
 	}
 	// Payload utama Discord Webhook (Field-field ini tetap 'username', 'content', dll. karena itu adalah kunci JSON Discord)
 	payload := map[string]any{
@@ -383,7 +362,7 @@ func sendWebhook(embeds []DiscordEmbed, target WebhookTarget, categoryShalat str
 	return result
 }
 
-func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time, offsetDuration time.Duration, target WebhookTarget) {
+func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time, offsetDuration time.Duration, target models.WebhookTarget) {
 	// ** Gunakan Timezone dari target Webhook **
 	loc, err := time.LoadLocation(target.Tz)
 	if err != nil {
@@ -447,7 +426,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 			if isExactlyTime {
 				mainTitle = fmt.Sprintf("📢 WAKTU ADZAN %s", label)
-				mainDescription = fmt.Sprintf("🔊 @here Adzan %s baru saja berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
+				mainDescription = fmt.Sprintf("🔊 @here Adzan %s telah berkumandang (Pukul **%s**). Saatnya untuk berwudhu dan bersiap menunaikan Shalat.",
 					label,
 					shalatTime.Format("15:04"),
 				)
@@ -466,7 +445,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		// Hitung zona waktu untuk footer (misal: "WIB")
 		zoneName, _ := now.Zone()
 
-		mainEmbed := DiscordEmbed{
+		mainEmbed := models.DiscordEmbed{
 			Color:       embedColor,
 			Title:       mainTitle,
 			Description: mainDescription,
@@ -479,18 +458,18 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		isAdzanForQuote := isExactlyTime && label != "Dhuha"
 		quoteEmbed, categoryShalat := getPrayerQuoteEmbed(label, isBefore, isAdzanForQuote, isAfter)
 
-		disclaimerEmbed := DiscordEmbed{
+		disclaimerEmbed := models.DiscordEmbed{
 			Color:       10070709, // Warna Ungu (Purple/Blurple)
 			Title:       "✨ Catatan",
 			Description: "Pesan ini adalah pengingat otomatis. Kami menghormati keyakinan dan praktik ibadah Anda. Notifikasi ini ditujukan khusus bagi **Rekan Muslim yang menunaikan ibadah shalat**.",
 		}
 
 		// Siapkan array embed (min 3)
-		embedsToSend := []DiscordEmbed{mainEmbed, quoteEmbed}
+		embedsToSend := []models.DiscordEmbed{mainEmbed, quoteEmbed}
 
 		coordinationDescription := "Mohon izin untuk saling mengingatkan dan mengkoordinasikan agar ibadah shalat dapat ditunaikan dengan tepat waktu. Terima kasih banyak atas perhatian dan kerjasamanya."
 
-		coordinationEmbed := DiscordEmbed{
+		coordinationEmbed := models.DiscordEmbed{
 			Color:       15158332, // Warna Merah
 			Title:       "📢 Koordinasi Waktu Ibadah",
 			Description: coordinationDescription,
