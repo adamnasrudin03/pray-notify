@@ -327,8 +327,7 @@ func sendWebhook(label string, embeds []models.DiscordEmbed, target models.Webho
 		Ashar:   true,
 		Maghrib: true,
 	}
-	isSend := (isAdzanInProgress(categoryShalat) || strings.Contains(categoryShalat, "Setelah")) && isAdzanWork[label]
-	if target.Name == DivisiIT && isSend {
+	if target.Name == DivisiIT && isAdzanWork[label] {
 		mentions = models.GetRandomMemberDivIT(7)
 	}
 
