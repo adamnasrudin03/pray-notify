@@ -121,14 +121,14 @@ var randomQuotes = map[string][]models.Quote{
 	},
 	AdzanMaghrib: {
 		{"Jika datang malam dari arah sini (timur) dan pergi siang dari arah sini (barat), serta terbenam matahari, maka sungguh orang yang puasa telah berbuka (waktunya Maghrib).", "HR. Bukhari dan Muslim"},
-		{"Allah tidak akan menyia-nyiakan pahala orang-orang yang berbuat baik.", "QS. Ali Imran: 171"},
+		{"Allah SWT tidak akan menyia-nyiakan pahala orang-orang yang berbuat baik.", "QS. Ali Imran: 171"},
 	},
 	AdzanIsya: {
 		{"Barangsiapa yang shalat Isya' berjama'ah, maka seolah-olah ia telah shalat setengah malam.", "HR. Muslim"},
 		{"Shalat yang paling berat bagi orang munafik adalah shalat Isya' dan shalat Subuh.", "HR. Bukhari dan Muslim"},
 	},
 	SetelahAdzan: {
-		{"Dirikanlah salat dan tunaikanlah zakat. Kebaikan apa pun yang kamu kerjakan untuk dirimu, kamu akan mendapatkannya (pahala) di sisi Allah.", "QS. Al-Baqarah: 110"},
+		{"Dirikanlah salat dan tunaikanlah zakat. Kebaikan apa pun yang kamu kerjakan untuk dirimu, kamu akan mendapatkannya (pahala) di sisi Allah SWT.", "QS. Al-Baqarah: 110"},
 		{"Sesungguhnya orang-orang yang beriman itu hanyalah orang-orang yang apabila disebutkan Allah SWT gemetarlah hati mereka, dan apabila dibacakan kepada mereka ayat-ayat-Nya, bertambahlah iman mereka.", "QS. Al-Anfal: 2 (Mengingatkan kewajiban setelah mendengar Adzan)"},
 		{"Dan mintalah pertolongan (kepada Allah SWT) dengan sabar dan salat. Dan sesungguhnya yang demikian itu sungguh berat, kecuali bagi orang-orang yang khusyuk.", "QS. Al-Baqarah: 45"},
 		{"Peliharalah semua salat(mu), dan (peliharalah) salat wusṭā. Berdirilah karena Allah SWT (dalam salatmu) dengan khusyuk.", "QS. Al-Baqarah: 238 (Pengulangan penekanan kewajiban)"},
@@ -188,13 +188,13 @@ func GetReminderByPrefix(prefix string) string {
 	reminders := map[string][]string{
 		Dhuha: {
 			"Waktu Dhuha telah masuk. Luangkan sedikit waktu untuk shalat Dhuha agar rezekimu hari ini diberi kelapangan dan keberkahan.",
-			"Sudah masuk waktu Dhuha. Di tengah aktivitasmu, sisihkan sejenak waktu untuk shalat Dhuha sebagai bentuk syukur atas nikmat Allah.",
+			"Sudah masuk waktu Dhuha. Di tengah aktivitasmu, sisihkan sejenak waktu untuk shalat Dhuha sebagai bentuk syukur atas nikmat Allah SWT.",
 			"Mari awali kesibukan dengan shalat Dhuha. Semoga Allah SWT memberkahi setiap usaha dan langkahmu hari ini.",
 			"Waktu Dhuha adalah waktu yang berkah. Sempatkan dua rakaat untuk ketenangan jiwa dan kelancaran rezeki.",
 			"Shalat Dhuha telah tiba. Jadikan momen ini untuk memohon petunjuk dan perlindungan-Nya di sepanjang hari ini.",
 		},
 		Subuh: {
-			"Selamat pagi, semoga Allah memudahkan langkahmu. Jangan lupa shalat Subuh agar harimu diawali dengan keberkahan.",
+			"Selamat pagi, semoga Allah SWT memudahkan langkahmu. Jangan lupa shalat Subuh agar harimu diawali dengan keberkahan.",
 			"Shalat Subuh telah tiba. Mulailah harimu dengan sujud yang menenangkan jiwa dan mengundang keberkahan.",
 			"Awali pagimu dengan ketaatan. Shalat Subuh adalah kunci pembuka pintu rezeki dan pertolongan Allah SWT.",
 			"Udara pagi yang sejuk dan sujud Subuh yang khusyuk adalah kombinasi terbaik untuk memulai hari dengan energi positif.",
@@ -207,7 +207,7 @@ func GetReminderByPrefix(prefix string) string {
 		},
 		Dzuhur: {
 			"Waktu Dzuhur sudah masuk. Istirahatlah sejenak dari kesibukan dan tenangkan hatimu dengan sujud kepada-Nya.",
-			"Dzuhur telah tiba. Di tengah rutinitas harian, jangan lupa memenuhi panggilan Allah.",
+			"Dzuhur telah tiba. Di tengah rutinitas harian, jangan lupa memenuhi panggilan Allah SWT.",
 			"Segarkan kembali semangatmu dengan shalat Dzuhur. Biarkan hati sejenak beristirahat dalam komunikasi dengan Sang Pencipta.",
 			"Panggilan Dzuhur adalah saat yang tepat untuk mengevaluasi niat dan memohon kekuatan untuk melanjutkan aktivitas.",
 			"Mari sejenak hentikan pekerjaan dan tunaikan shalat Dzuhur. Keberkahan waktu lebih utama dari sekedar mengejar target.",
@@ -230,7 +230,7 @@ func GetReminderByPrefix(prefix string) string {
 			"Mari jawab seruan Adzan Ashar dengan segera menunaikan kewajiban.",
 		},
 		Maghrib: {
-			"Maghrib telah tiba. Di waktu pergantian siang dan malam ini, jangan lewatkan kesempatan untuk mendekat kepada Allah.",
+			"Maghrib telah tiba. Di waktu pergantian siang dan malam ini, jangan lewatkan kesempatan untuk mendekat kepada Allah SWT.",
 			"Waktu Maghrib telah masuk. Semoga setiap sujudmu membawa ketenangan hati.",
 			"Syukuri akhir harimu dengan shalat Maghrib. Biarkan hati tenang dalam naungan rahmat-Nya.",
 			"Maghrib adalah momen refleksi. Mari tunaikan kewajiban sebelum beristirahat bersama keluarga.",
@@ -258,22 +258,32 @@ func GetReminderByPrefix(prefix string) string {
 			"Adzan akan berkumandang. Mari hentikan sejenak aktivitasmu dan persiapkan diri untuk shalat.",
 			"Beberapa menit menuju waktu shalat. Mari mulai merapikan pekerjaan dan bersiap berwudhu.",
 			"Persiapkan dirimu, waktu shalat hampir tiba. Semoga ibadah kita hari ini diterima Allah SWT.",
-			"Mari bersiap menyambut panggilan Allah. Segera bersihkan diri dan siapkan hati.",
+			"Mari bersiap menyambut panggilan Allah SWT. Segera bersihkan diri dan siapkan hati.",
+			"Waktu shalat segera tiba. Mari bersiap, berwudhu, dan menenangkan hati sejenak dari aktivitas dunia.",
+			"Panggilan Allah SWT hampir berkumandang. Mari hentikan sejenak urusan pekerjaan untuk menyambut waktu shalat.",
+			"Hampir waktu shalat. Mari manfaatkan beberapa menit ini untuk penyucian diri dan persiapan ibadah.",
+			"Segera bersiap, adzan akan segera memanggil. Mari raih keutamaan shalat di awal waktu.",
+			"Waktu ibadah sudah di depan mata. Mari bergegas mempersiapkan diri demi kekhusyukan shalat.",
 		},
 		"setelah": {
 			"Alhamdulillah. Bagi yang sudah shalat, semoga ibadahnya diterima. Bagi yang belum, mari bersegera tunaikan kewajiban. Kita doakan bersama, semoga Allah senantiasa membimbing hati kita menuju ketaatan.",
 			"Waktu shalat sedang berlangsung. Mari manfaatkan kesempatan ini; bagi yang sudah, syukuri nikmatnya. Bagi yang belum, segerakan dan semoga hidayah-Nya selalu menyertai langkah kita.",
 			"Istirahat sejenak untuk menunaikan shalat akan membawa ketenangan. Bagi yang telah selesai, jangan lupa berzikir. Bagi yang belum, mari segerakan. Semoga kita semua diringankan untuk memenuhi panggilan-Nya.",
 			"Kewajiban shalat adalah prioritas. Manfaatkan waktu yang tersisa untuk segera menghadap Sang Khalik.",
-			"Jangan tunda lagi, waktu shalat terus berjalan. Semoga Allah memberikan kelapangan hati untuk menyegerakan ketaatan.",
+			"Jangan tunda lagi, waktu shalat terus berjalan. Semoga Allah SWT memberikan kelapangan hati untuk menyegerakan ketaatan.",
+			"Shalat sedang berlangsung. Mari manfaatkan waktu ini untuk bermunajat dan memohon bimbingan-Nya.",
+			"Waktu shalat masih tersedia. Bagi yang belum, mari manfaatkan kesempatan ini untuk bersujud.",
+			"Semoga setiap sujud kita menjadi penggugur dosa dan pengangkat derajat di sisi Allah SWT.",
+			"Jangan biarkan waktu shalat berlalu begitu saja. Mari segerakan bagi yang masih memiliki keluangan.",
+			"Ketenangan sejati ada dalam sujud. Mari tunaikan kewajiban selagi waktu masih ada.",
 		},
 	}
 
 	general := []string{
-		"Sudah masuk waktu shalat. Sisihkan sebentar waktumu untuk menenangkan hati dan mengingat Allah.",
+		"Sudah masuk waktu shalat. Sisihkan sebentar waktumu untuk menenangkan hati dan mengingat Allah SWT.",
 		"Ini waktu yang baik untuk menghentikan aktivitas sejenak dan menunaikan shalat.",
 		"Jangan lupa menyempatkan diri untuk shalat. Semoga hatimu selalu dijaga dan dilapangkan.",
-		"Ingatlah Allah di sela kesibukanmu. Segera tunaikan shalat agar aktivitasmu lebih berkah.",
+		"Ingatlah Allah SWT di sela kesibukanmu. Segera tunaikan shalat agar aktivitasmu lebih berkah.",
 		"Mari raih ketenangan dengan bersujud. Waktu shalat adalah waktu terbaik untuk mengisi energi spiritual.",
 	}
 
