@@ -370,7 +370,7 @@ func sendWebhook(label string, embeds []models.DiscordEmbed, target models.Webho
 	if target.Name == DivisiIT {
 		temp := models.GetRandomMemberDivIT(1)
 		for _, v := range temp {
-			payload["username"] = v.Name + " " + v.UserID
+			payload["username"] = v.Name
 			break
 		}
 	}
