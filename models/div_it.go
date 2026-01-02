@@ -1,9 +1,8 @@
 package models
 
 import (
+	"math/rand"
 	"slices"
-
-	"github.com/adamnasrudin03/pray-notify/helpers"
 )
 
 // Manager
@@ -53,95 +52,92 @@ var membersPeDivIT = []DiscordMember{
 	{UserID: "<@978122157454405672>", Name: "Jafar Rohmadi"},
 }
 
-func GetDiscordUserIDManagerDivIT() []string {
+func GetMemberManagerDivIT() []DiscordMember {
+	return membersManagerDivIT
+}
+
+func GetMemberSreDivIT() []DiscordMember {
+	return membersSreDivIT
+}
+
+func GetMemberForceDivIT() []DiscordMember {
+	return membersForceDivIT
+}
+
+func GetMemberSdetDivIT() []DiscordMember {
+	return membersSdetDivIT
+}
+
+func GetMemberPeDivIT() []DiscordMember {
+	return membersPeDivIT
+}
+
+func GetMemberDivIT() []DiscordMember {
+	var members []DiscordMember
+	members = append(members, GetMemberManagerDivIT()...)
+	members = append(members, GetMemberSreDivIT()...)
+	members = append(members, GetMemberForceDivIT()...)
+	members = append(members, GetMemberSdetDivIT()...)
+	members = append(members, GetMemberPeDivIT()...)
+	return members
+}
+
+func extractUserIDs(members []DiscordMember) []string {
 	var userID []string
-	for _, member := range membersManagerDivIT {
+	for _, member := range members {
 		userID = append(userID, member.UserID)
 	}
 	return userID
 }
 
-func GetDiscordUserIDSreDivIT() []string {
-	var userID []string
-	for _, member := range membersSreDivIT {
-		userID = append(userID, member.UserID)
+func getRandomMembers(length int, records []DiscordMember) []DiscordMember {
+	if length <= 0 || len(records) == 0 {
+		return nil
 	}
-	return userID
-}
 
-func GetDiscordUserIDForceDivIT() []string {
-	var userID []string
-	for _, member := range membersForceDivIT {
-		userID = append(userID, member.UserID)
+	var result []DiscordMember
+	for range length {
+		result = append(result, records[rand.Intn(len(records))])
 	}
-	return userID
+	return result
 }
 
-func GetDiscordUserIDSdetDivIT() []string {
-	var userID []string
-	for _, member := range membersSdetDivIT {
-		userID = append(userID, member.UserID)
-	}
-	return userID
-}
-
-func GetDiscordUserIDPeDivIT() []string {
-	var userID []string
-	for _, member := range membersPeDivIT {
-		userID = append(userID, member.UserID)
-	}
-	return userID
-}
-
-func GetDiscordUserIDDivIT() []string {
-	var userID []string
-	userID = append(userID, GetDiscordUserIDManagerDivIT()...)
-	userID = append(userID, GetDiscordUserIDSreDivIT()...)
-	userID = append(userID, GetDiscordUserIDForceDivIT()...)
-	userID = append(userID, GetDiscordUserIDSdetDivIT()...)
-	userID = append(userID, GetDiscordUserIDPeDivIT()...)
-	return userID
-}
-
-func GetRandomMemberDivIT(total int) string {
+func GetRandomMemberDivIT(total int) []DiscordMember {
+	allMembers := GetMemberDivIT()
 	if total < 5 {
-		return helpers.GetRandomString(total, GetDiscordUserIDDivIT())
+		return getRandomMembers(total, allMembers)
 	}
-	result := ""
 
-	// Collect already selected user IDs
-	var alreadySelected []string
+	var result []DiscordMember
+	var alreadySelectedIDs []string
 
-	selectedManager := helpers.GetRandomString(1, GetDiscordUserIDManagerDivIT())
-	result += selectedManager + " "
-	alreadySelected = append(alreadySelected, selectedManager)
+	selectRandom := func(source []DiscordMember) {
+		if len(source) == 0 {
+			return
+		}
+		selected := source[rand.Intn(len(source))]
+		result = append(result, selected)
+		alreadySelectedIDs = append(alreadySelectedIDs, selected.UserID)
+	}
 
-	selectedSre := helpers.GetRandomString(1, GetDiscordUserIDSreDivIT())
-	result += selectedSre + " "
-	alreadySelected = append(alreadySelected, selectedSre)
+	selectRandom(GetMemberManagerDivIT())
+	selectRandom(GetMemberSreDivIT())
+	selectRandom(GetMemberSdetDivIT())
+	selectRandom(GetMemberPeDivIT())
+	selectRandom(GetMemberForceDivIT())
 
-	selectedSdet := helpers.GetRandomString(1, GetDiscordUserIDSdetDivIT())
-	result += selectedSdet + " "
-	alreadySelected = append(alreadySelected, selectedSdet)
-
-	selectedPe := helpers.GetRandomString(1, GetDiscordUserIDPeDivIT())
-	result += selectedPe + " "
-	alreadySelected = append(alreadySelected, selectedPe)
-
-	selectedForce := helpers.GetRandomString(1, GetDiscordUserIDForceDivIT())
-	result += selectedForce + " "
-	alreadySelected = append(alreadySelected, selectedForce)
-
-	// Filter out already selected IDs from the full list
-	allUserIDs := GetDiscordUserIDDivIT()
-	var availableUserIDs []string
-	for _, userID := range allUserIDs {
-		isAlreadySelected := slices.Contains(alreadySelected, userID)
-		if !isAlreadySelected {
-			availableUserIDs = append(availableUserIDs, userID)
+	// Filter out already selected members from the full list
+	var availableMembers []DiscordMember
+	for _, member := range allMembers {
+		if !slices.Contains(alreadySelectedIDs, member.UserID) {
+			availableMembers = append(availableMembers, member)
 		}
 	}
 
-	result += helpers.GetRandomString(total-5, availableUserIDs)
+	remaining := total - 5
+	if remaining > 0 {
+		result = append(result, getRandomMembers(remaining, availableMembers)...)
+	}
+
 	return result
 }
