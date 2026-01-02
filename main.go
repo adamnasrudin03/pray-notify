@@ -328,19 +328,22 @@ func sendWebhook(label string, embeds []models.DiscordEmbed, target models.Webho
 		result.Error = fmt.Errorf("webhook DILEWATI: Divisi IT tidak aktif di akhir pekan (Sabtu/Minggu)")
 		return result
 	}
-	message := "📢 @here \n"
-	message += GetReminderByPrefix(categoryShalat)
-	message += " \n"
-	message += BuildShalatMessage(categoryShalat)
-	message += " \n\n\n"
-
-	mentions := target.Mentions
 	isAdzanWork := map[string]bool{
 		Dzuhur:  true,
 		Ashar:   true,
 		Maghrib: true,
 	}
 
+	message := "📢 @here \n"
+	if !isAdzanWork[label] {
+		message = "📢📢📢 \n"
+	}
+	message += GetReminderByPrefix(categoryShalat)
+	message += " \n"
+	message += BuildShalatMessage(categoryShalat)
+	message += " \n\n\n"
+
+	mentions := target.Mentions
 	if target.Name == DivisiIT && isAdzanWork[label] {
 		randomMembers := models.GetRandomMemberDivIT(7)
 		var m []string
