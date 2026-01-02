@@ -82,6 +82,8 @@ var (
 )
 
 var randomAvatarURL = []string{
+	MyAvatar,
+	TestAvaatar,
 	"https://media.discordapp.net/attachments/936166044748369930/1456490215441961062/photo-1511367461989-f85a21fda167.avif?ex=69588db7&is=69573c37&hm=1a1b537dc093478381b8a24c8d242ceb0c69a287f1025594f09c6d8c4faaaa6f&=&format=webp&quality=lossless&width=1338&height=753",
 	"https://media.discordapp.net/attachments/936166044748369930/1456490980672012298/photo-1750535135635-3783825e996c.avif?ex=69588e6e&is=69573cee&hm=9390dfefae07c112252468ad295683bb818c9523b0f734fdb43d9e4037a3fb0b&=&format=webp&quality=lossless&width=831&height=831",
 	"https://media.discordapp.net/attachments/936166044748369930/1456490981086986281/photo-1750535135645-005e250ff210.avif?ex=69588e6e&is=69573cee&hm=f3759c4af319f9bbc8e7150cec6d7ca3cae885b91dbb8a489b34295153560cbd&=&format=webp&quality=lossless&width=831&height=831",
@@ -436,7 +438,6 @@ func sendWebhook(label string, embeds []models.DiscordEmbed, target models.Webho
 	}
 	if target.Name != DivisiIT && categoryShalat == SebelumAdzan {
 		payload["username"] = MyUsername
-		payload["avatar_url"] = MyAvatar
 	}
 
 	if testingMode {
