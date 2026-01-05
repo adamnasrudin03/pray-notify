@@ -24,6 +24,7 @@ var membersForceDivIT = []DiscordMember{
 	{UserID: "<@873083047501787156>", Name: "Adam"},
 	{UserID: "<@1403317129163440241>", Name: "Achmad H"},
 	{UserID: "<@1450763384424370227>", Name: "Fuji Nugraha"},
+	{UserID: "<@690491860984004638>", Name: "Dina Sri Hartini"},
 	// {UserID: "<@571235433271394304>", Name: "Andrean"},
 }
 
