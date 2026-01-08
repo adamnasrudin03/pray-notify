@@ -31,6 +31,7 @@ const (
 	Ashar   = "ashar"
 	Maghrib = "maghrib"
 	Isya    = "isya"
+	Jumat   = "jumat"
 
 	SebelumAdzan = "SebelumAdzan"
 	AdzanSubuh   = "AdzanSubuh"
@@ -102,6 +103,11 @@ var randomQuotes = map[string][]models.Quote{
 		{"Barangsiapa shalat Dhuha dua belas rakaat, niscaya Allah SWT membangunkan baginya istana di surga.", "HR. Tirmidzi & Ibnu Majah"},
 		{"Shalat Dhuha adalah shalat awwabin (orang-orang yang kembali taat), ketika anak unta kepanasan.", "HR. Muslim"},
 		{"Jadikan awal harimu penuh berkah dengan Shalat Dhuha. Rezeki menanti para hamba yang bertakwa.", "Nasehat Islam"},
+	},
+	Jumat: {
+		{"Wahai orang-orang yang beriman! Apabila telah diseru untuk melaksanakan salat pada hari Jumat, maka segeralah kamu mengingat Allah dan tinggalkanlah jual beli.", "QS. Al-Jumu'ah: 9"},
+		{"Sebaik-baik hari yang matahari terbit padanya adalah hari Jumat; padanya Adam diciptakan, dimasukkan ke surga dan dikeluarkan darinya.", "HR. Muslim"},
+		{"Barangsiapa mandi pada hari Jumat, memakai pakaian terbaik, dan memakai wangi-wangian, lalu pergi shalat Jumat, maka diampuni dosa-dosanya antara dua Jumat.", "HR. Abu Daud"},
 	},
 	SebelumAdzan: {
 		{"Jagalah shalat lima waktu, terutama shalat yang pertengahan (Ashar) dan berdirilah untuk Allah SWT (dalam shalatmu) dengan khusyuk.", "QS. Al-Baqarah: 238"},
@@ -255,6 +261,13 @@ func GetReminderByPrefix(prefix string) string {
 			"Waktu Isya telah masuk. Ayo jawab panggilannya sebelum kita beristirahat malam.",
 			"Adzan Isya mengajak kita untuk melepaskan segala beban dunia sebelum tidur dalam doa.",
 		},
+		Jumat: {
+			"Hari Jumat adalah sayyidul ayyam (penghulu hari). Mari persiapkan diri untuk Shalat Jumat berjamaah.",
+			"Jumatan sebentar lagi. Bagi kaum laki-laki, segera persiapkan diri dan berangkat ke masjid lebih awal.",
+			"Tinggalkan sejenak urusan duniamu, penuhi panggilan-Nya di hari Jumat yang mulia ini.",
+			"Jangan lupa sunnah hari Jumat: Mandi, potong kuku, wangi-wangian, dan datang awal ke masjid.",
+			"Shalat Jumat adalah kewajiban. Mari melangkah ke masjid dengan hati yang ikhlas mengharap ridha-Nya.",
+		},
 		"sebelum": {
 			"Waktu shalat sebentar lagi akan tiba. Bersiaplah untuk menunaikan ibadah dan sucikan dirimu.",
 			"Adzan akan berkumandang. Mari hentikan sejenak aktivitasmu dan persiapkan diri untuk shalat.",
@@ -310,6 +323,8 @@ func GetReminderByPrefix(prefix string) string {
 		key = Maghrib
 	case strings.HasPrefix(p, Isya):
 		key = Isya
+	case strings.HasPrefix(p, Jumat):
+		key = Jumat
 	default:
 		return general[r.Intn(len(general))]
 	}
@@ -360,6 +375,18 @@ $ sistem-acara picu persiapan_shalat
     - **Durasi:** Bisa ditunaikan sampai 15 menit sebelum Dzuhur.
     - **Prioritas:** Luangkan waktu 5-10 menit.
 [Alur Kerja] Selesai tahap("Peringatan Dhuha - Sunnah")
+`
+
+	case Jumat:
+		content = `
+[Alur Kerja] tahap("Shalat Jumat - Wajib")
+[INFO] Waktu Shalat Jumat telah tiba
+[INFO] Pemicu: notifikasi_jumatan()
+[INFO] Tindakan:
+    - **Prioritas Utama:** Segera tinggalkan pekerjaan.
+    - **Langkah:** Menuju masjid lebih awal untuk mendengarkan khutbah.
+    - **Peringatan:** Jual beli/pekerjaan haram dilakukan saat adzan Jumat berkumandang.
+[Alur Kerja] Selesai tahap("Shalat Jumat - Wajib")
 `
 
 	default: // Digunakan untuk waktu Adzan (Subuh, Dzuhur, Ashar, Maghrib, Isya)
@@ -505,6 +532,39 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 				shalatTime.Format("15:04"),
 			)
 
+		} else if label == Dzuhur && now.Weekday() == time.Friday && (isBefore || isExactlyTime) {
+			// 🔥 KHUSUS JUMATAN (Laki-laki) - Range -30 s.d 0 menit
+			if isExactlyTime {
+				embedColor = 5814783 // Hijau
+				mainTitle = "🕌 Waktu Shalat Jumat Telah Tiba"
+				mainDescription = fmt.Sprintf(
+					"📢 @here Adzan Jumat telah berkumandang pada **pukul %s WIB**. Bagi rekan laki-laki, mari segera menuju masjid untuk menunaikan Shalat Jumat.",
+					shalatTime.Format("15:04"),
+				)
+			} else {
+				// Reminder Sebelum Jumatan
+				embedColor = 16763904 // Kuning
+				durationUntilShalat := shalatTime.Sub(now).Truncate(time.Second)
+				minutes := int(durationUntilShalat.Minutes())
+
+				if durationUntilShalat > 0 {
+					mainTitle = "🕌 Persiapan Shalat Jumat"
+					mainDescription = fmt.Sprintf(
+						"📢 @here Waktu Shalat Jumat akan tiba dalam **%d menit** (pukul **%s WIB**). Bagi rekan laki-laki, mari persiapkan diri dan segera menuju masjid.",
+						minutes,
+						shalatTime.Format("15:04"),
+					)
+				} else {
+					// Fallback jika terlambat
+					formattedDurationBefore := fmt.Sprintf("%d menit", int(absDuration.Minutes()))
+					mainTitle = "⚠️ Waktu Jumatan Telah Tiba"
+					mainDescription = fmt.Sprintf(
+						"📢 @here Waktu Jumatan telah masuk pada **pukul %s WIB**. Mohon maaf, pengingat **%s** sebelum waktu terkirim terlambat.",
+						shalatTime.Format("15:04"),
+						formattedDurationBefore,
+					)
+				}
+			}
 		} else if isBefore {
 			durationUntilShalat := shalatTime.Sub(now).Truncate(time.Second)
 			minutes := int(durationUntilShalat.Minutes())
@@ -570,6 +630,10 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 
 		isAdzanForQuote := isExactlyTime && label != "Dhuha"
 		quoteEmbed, categoryShalat := getPrayerQuoteEmbed(label, isBefore, isAdzanForQuote, isAfter)
+
+		if label == Dzuhur && now.Weekday() == time.Friday && (isBefore || isExactlyTime) {
+			categoryShalat = Jumat
+		}
 
 		disclaimerEmbed := models.DiscordEmbed{
 			Color: 10070709,
