@@ -20,22 +20,6 @@ const (
 	Test       = "Testing"
 	DivisiIT   = "Divisi IT"
 	MyChannel  = "My Channel"
-
-	Dhuha   = "dhuha"
-	Subuh   = "subuh"
-	Dzuhur  = "dzuhur"
-	Ashar   = "ashar"
-	Maghrib = "maghrib"
-	Isya    = "isya"
-	Jumat   = "jumat"
-
-	SebelumAdzan = "SebelumAdzan"
-	AdzanSubuh   = "AdzanSubuh"
-	AdzanDzuhur  = "AdzanDzuhur"
-	AdzanAshar   = "AdzanAshar"
-	AdzanMaghrib = "AdzanMaghrib"
-	AdzanIsya    = "AdzanIsya"
-	SetelahAdzan = "SetelahAdzan"
 )
 
 func isAdzanInProgress(c string) bool {
@@ -79,44 +63,44 @@ var (
 )
 
 var randomQuotes = map[string][]models.Quote{
-	Dhuha: {
+	models.Dhuha: {
 		{"Dua rakaat shalat Dhuha setara dengan 360 sedekah yang diwajibkan atas setiap persendian tubuhmu.", "HR. Muslim"},
 		{"Barangsiapa shalat Dhuha dua belas rakaat, niscaya Allah SWT membangunkan baginya istana di surga.", "HR. Tirmidzi & Ibnu Majah"},
 		{"Shalat Dhuha adalah shalat awwabin (orang-orang yang kembali taat), ketika anak unta kepanasan.", "HR. Muslim"},
 		{"Jadikan awal harimu penuh berkah dengan Shalat Dhuha. Rezeki menanti para hamba yang bertakwa.", "Nasehat Islam"},
 	},
-	Jumat: {
+	models.Jumat: {
 		{"Wahai orang-orang yang beriman! Apabila telah diseru untuk melaksanakan salat pada hari Jumat, maka segeralah kamu mengingat Allah dan tinggalkanlah jual beli.", "QS. Al-Jumu'ah: 9"},
 		{"Sebaik-baik hari yang matahari terbit padanya adalah hari Jumat; padanya Adam diciptakan, dimasukkan ke surga dan dikeluarkan darinya.", "HR. Muslim"},
 		{"Barangsiapa mandi pada hari Jumat, memakai pakaian terbaik, dan memakai wangi-wangian, lalu pergi shalat Jumat, maka diampuni dosa-dosanya antara dua Jumat.", "HR. Abu Daud"},
 	},
-	SebelumAdzan: {
+	models.SebelumAdzan: {
 		{"Jagalah shalat lima waktu, terutama shalat yang pertengahan (Ashar) dan berdirilah untuk Allah SWT (dalam shalatmu) dengan khusyuk.", "QS. Al-Baqarah: 238"},
 		{"Shalat di awal waktu itu adalah amalan yang paling dicintai oleh Allah SWT.", "HR. Bukhari dan Muslim"},
 		{"Bersegeralah mendirikan shalat sebelum sibuk dengan urusan dunia.", "Nasehat Islam"},
 		{"Sesungguhnya shalat pada waktunya adalah kewajiban yang telah ditentukan atas orang-orang yang beriman.", "QS. An-Nisa: 103"},
 	},
-	AdzanSubuh: {
+	models.AdzanSubuh: {
 		{"Sesungguhnya shalat Subuh itu disaksikan (oleh malaikat-malaikat malam dan malaikat-malaikat siang).", "QS. Al-Isra: 78"},
 		{"Barangsiapa shalat Shubuh berjama’ah, maka dia berada dalam jaminan Allah SWT.", "HR. Muslim"},
 	},
-	AdzanDzuhur: {
+	models.AdzanDzuhur: {
 		{"Jagalah (peliharalah) segala shalatmu dan (peliharalah) shalat wustha. Berdirilah untuk Allah SWT(dalam shalatmu) dengan khusyuk.", "QS. Al-Baqarah: 238"},
 		{"Apabila kamu telah menyelesaikan shalat, ingatlah Allah SWT ketika kamu berdiri, ketika kamu duduk dan ketika kamu berbaring.", "QS. An-Nisa: 103"},
 	},
-	AdzanAshar: {
+	models.AdzanAshar: {
 		{"Barangsiapa meninggalkan shalat Ashar, maka seolah-olah dia telah kehilangan keluarga dan hartanya.", "HR. Bukhari dan Muslim"},
 		{"Shalat wustha adalah shalat Ashar. Siapa yang menjaganya, ia telah mendapat keberuntungan besar.", "HR. Tirmidzi"},
 	},
-	AdzanMaghrib: {
+	models.AdzanMaghrib: {
 		{"Jika datang malam dari arah sini (timur) dan pergi siang dari arah sini (barat), serta terbenam matahari, maka sungguh orang yang puasa telah berbuka (waktunya Maghrib).", "HR. Bukhari dan Muslim"},
 		{"Allah SWT tidak akan menyia-nyiakan pahala orang-orang yang berbuat baik.", "QS. Ali Imran: 171"},
 	},
-	AdzanIsya: {
+	models.AdzanIsya: {
 		{"Barangsiapa yang shalat Isya' berjama'ah, maka seolah-olah ia telah shalat setengah malam.", "HR. Muslim"},
 		{"Shalat yang paling berat bagi orang munafik adalah shalat Isya' dan shalat Subuh.", "HR. Bukhari dan Muslim"},
 	},
-	SetelahAdzan: {
+	models.SetelahAdzan: {
 		{"Dirikanlah salat dan tunaikanlah zakat. Kebaikan apa pun yang kamu kerjakan untuk dirimu, kamu akan mendapatkannya (pahala) di sisi Allah SWT.", "QS. Al-Baqarah: 110"},
 		{"Sesungguhnya orang-orang yang beriman itu hanyalah orang-orang yang apabila disebutkan Allah SWT gemetarlah hati mereka, dan apabila dibacakan kepada mereka ayat-ayat-Nya, bertambahlah iman mereka.", "QS. Al-Anfal: 2 (Mengingatkan kewajiban setelah mendengar Adzan)"},
 		{"Dan mintalah pertolongan (kepada Allah SWT) dengan sabar dan salat. Dan sesungguhnya yang demikian itu sungguh berat, kecuali bagi orang-orang yang khusyuk.", "QS. Al-Baqarah: 45"},
@@ -145,15 +129,15 @@ func getRandomQuote(category string) models.Quote {
 func getPrayerQuoteEmbed(label string, isBefore bool, isAdzan bool, isAfter bool) (result models.DiscordEmbed, categoryShalat string) {
 	var category string
 
-	if label == Dhuha {
-		category = Dhuha
+	if label == models.Dhuha {
+		category = models.Dhuha
 	} else if isAdzan {
 		// Jika tepat waktu Adzan, gunakan kategori spesifik (e.g., "AdzanSubuh")
 		category = "Adzan" + label
 	} else if isBefore {
-		category = SebelumAdzan
+		category = models.SebelumAdzan
 	} else if isAfter {
-		category = SetelahAdzan
+		category = models.SetelahAdzan
 	} else {
 		// Fallback: Untuk waktu Adzan yang tidak terdeteksi labelnya (seharusnya tidak terjadi)
 		category = "Adzan" + label
@@ -175,14 +159,14 @@ var (
 
 func GetReminderByPrefix(prefix string) string {
 	reminders := map[string][]string{
-		Dhuha: {
+		models.Dhuha: {
 			"Waktu Dhuha telah masuk. Luangkan sedikit waktu untuk shalat Dhuha agar rezekimu hari ini diberi kelapangan dan keberkahan.",
 			"Sudah masuk waktu Dhuha. Di tengah aktivitasmu, sisihkan sejenak waktu untuk shalat Dhuha sebagai bentuk syukur atas nikmat Allah SWT.",
 			"Mari awali kesibukan dengan shalat Dhuha. Semoga Allah SWT memberkahi setiap usaha dan langkahmu hari ini.",
 			"Waktu Dhuha adalah waktu yang berkah. Sempatkan dua rakaat untuk ketenangan jiwa dan kelancaran rezeki.",
 			"Shalat Dhuha telah tiba. Jadikan momen ini untuk memohon petunjuk dan perlindungan-Nya di sepanjang hari ini.",
 		},
-		Subuh: {
+		models.Subuh: {
 			"Selamat pagi, semoga Allah SWT memudahkan langkahmu. Jangan lupa shalat Subuh agar harimu diawali dengan keberkahan.",
 			"Shalat Subuh telah tiba. Mulailah harimu dengan sujud yang menenangkan jiwa dan mengundang keberkahan.",
 			"Awali pagimu dengan ketaatan. Shalat Subuh adalah kunci pembuka pintu rezeki dan pertolongan Allah SWT.",
@@ -194,7 +178,7 @@ func GetReminderByPrefix(prefix string) string {
 			"Adzan Subuh adalah awal kemenangan hari. Mari jawab panggilannya dengan penuh semangat.",
 			"Keberkahan hari dimulai dari respon kita terhadap Adzan Subuh. Mari segera ke masjid.",
 		},
-		Dzuhur: {
+		models.Dzuhur: {
 			"Waktu Dzuhur sudah masuk. Istirahatlah sejenak dari kesibukan dan tenangkan hatimu dengan sujud kepada-Nya.",
 			"Dzuhur telah tiba. Di tengah rutinitas harian, jangan lupa memenuhi panggilan Allah SWT.",
 			"Segarkan kembali semangatmu dengan shalat Dzuhur. Biarkan hati sejenak beristirahat dalam komunikasi dengan Sang Pencipta.",
@@ -206,7 +190,7 @@ func GetReminderByPrefix(prefix string) string {
 			"Panggilan Dzuhur sudah tiba. Mari sucikan diri dan bersujud bersama rekan-rekan.",
 			"Adzan Dzuhur mengingatkan kita bahwa ada yang lebih utama dari pekerjaan. Ayo shalat.",
 		},
-		Ashar: {
+		models.Ashar: {
 			"Ashar telah masuk. Saat yang tepat untuk menenangkan pikiran dan menyempurnakan kewajiban di tengah aktivitasmu.",
 			"Sudah masuk waktu Ashar. Segarkan kembali hati dan pikiranmu dengan shalat.",
 			"Jangan biarkan kesibukan sore menghalangimu dari shalat Ashar. Mari tunaikan kewajiban dengan penuh keikhlasan.",
@@ -218,7 +202,7 @@ func GetReminderByPrefix(prefix string) string {
 			"Adzan Ashar adalah pengingat untuk tetap terhubung dengan Sang Pencipta di sisa hari.",
 			"Mari jawab seruan Adzan Ashar dengan segera menunaikan kewajiban.",
 		},
-		Maghrib: {
+		models.Maghrib: {
 			"Maghrib telah tiba. Di waktu pergantian siang dan malam ini, jangan lewatkan kesempatan untuk mendekat kepada Allah SWT.",
 			"Waktu Maghrib telah masuk. Semoga setiap sujudmu membawa ketenangan hati.",
 			"Syukuri akhir harimu dengan shalat Maghrib. Biarkan hati tenang dalam naungan rahmat-Nya.",
@@ -230,7 +214,7 @@ func GetReminderByPrefix(prefix string) string {
 			"Panggilan Maghrib adalah undangan untuk ketenangan malam. Ayo segera berwudhu.",
 			"Mari jemput keberkahan malam hari dengan menjawab Adzan Maghrib tepat waktu.",
 		},
-		Isya: {
+		models.Isya: {
 			"Isya telah masuk. Sempurnakan harimu dengan shalat sebelum beristirahat.",
 			"Sudah masuk waktu Isya. Tenangkan hatimu dan mintalah perlindungan untuk malam ini.",
 			"Tutup harimu dengan indah melalui shalat Isya. Semoga istirahatmu bernilai ibadah.",
@@ -242,7 +226,7 @@ func GetReminderByPrefix(prefix string) string {
 			"Waktu Isya telah masuk. Ayo jawab panggilannya sebelum kita beristirahat malam.",
 			"Adzan Isya mengajak kita untuk melepaskan segala beban dunia sebelum tidur dalam doa.",
 		},
-		Jumat: {
+		models.Jumat: {
 			"Hari Jumat adalah sayyidul ayyam (penghulu hari). Mari persiapkan diri untuk Shalat Jumat berjamaah.",
 			"Jumatan sebentar lagi. Bagi kaum laki-laki, segera persiapkan diri dan berangkat ke masjid lebih awal.",
 			"Tinggalkan sejenak urusan duniamu, penuhi panggilan-Nya di hari Jumat yang mulia ini.",
@@ -292,20 +276,20 @@ func GetReminderByPrefix(prefix string) string {
 		key = "sebelum"
 	case strings.Contains(p, "setelah"):
 		key = "setelah"
-	case strings.HasPrefix(p, Dhuha):
-		key = Dhuha
-	case strings.HasPrefix(p, Subuh):
-		key = Subuh
-	case strings.HasPrefix(p, Dzuhur):
-		key = Dzuhur
-	case strings.HasPrefix(p, Ashar):
-		key = Ashar
-	case strings.HasPrefix(p, Maghrib):
-		key = Maghrib
-	case strings.HasPrefix(p, Isya):
-		key = Isya
-	case strings.HasPrefix(p, Jumat):
-		key = Jumat
+	case strings.HasPrefix(p, models.Dhuha):
+		key = models.Dhuha
+	case strings.HasPrefix(p, models.Subuh):
+		key = models.Subuh
+	case strings.HasPrefix(p, models.Dzuhur):
+		key = models.Dzuhur
+	case strings.HasPrefix(p, models.Ashar):
+		key = models.Ashar
+	case strings.HasPrefix(p, models.Maghrib):
+		key = models.Maghrib
+	case strings.HasPrefix(p, models.Isya):
+		key = models.Isya
+	case strings.HasPrefix(p, models.Jumat):
+		key = models.Jumat
 	default:
 		return general[r.Intn(len(general))]
 	}
@@ -322,7 +306,7 @@ func BuildShalatMessage(categoryShalat string) string {
 
 	switch categoryShalat {
 
-	case SebelumAdzan:
+	case models.SebelumAdzan:
 		content = `
 $ sistem-acara picu persiapan_shalat
 ----------------------------------------
@@ -334,7 +318,7 @@ $ sistem-acara picu persiapan_shalat
 >> Status: Tugas yang tidak mendesak dapat ditunda sementara.
 `
 
-	case SetelahAdzan:
+	case models.SetelahAdzan:
 		content = `
 [Alur Kerja] tahap("Tindak Lanjut Shalat")
 [INFO] Notifikasi: Shalat sedang berlangsung
@@ -346,7 +330,7 @@ $ sistem-acara picu persiapan_shalat
 [Alur Kerja] Selesai tahap("Tindak Lanjut Shalat")
 `
 
-	case Dhuha:
+	case models.Dhuha:
 		content = `
 [Alur Kerja] tahap("Peringatan Dhuha - Sunnah")
 [INFO] Notifikasi: Waktu Shalat Dhuha telah tiba (Sunnah)
@@ -358,7 +342,7 @@ $ sistem-acara picu persiapan_shalat
 [Alur Kerja] Selesai tahap("Peringatan Dhuha - Sunnah")
 `
 
-	case Jumat:
+	case models.Jumat:
 		content = `
 [Alur Kerja] tahap("Shalat Jumat - Wajib")
 [INFO] Waktu Shalat Jumat telah tiba
@@ -399,9 +383,9 @@ func sendWebhook(label string, embeds []models.DiscordEmbed, target models.Webho
 		return result
 	}
 	isAdzanWork := map[string]bool{
-		Dzuhur:  true,
-		Ashar:   true,
-		Maghrib: true,
+		models.Dzuhur:  true,
+		models.Ashar:   true,
+		models.Maghrib: true,
 	}
 
 	message := "📢 @here \n"
@@ -444,7 +428,7 @@ func sendWebhook(label string, embeds []models.DiscordEmbed, target models.Webho
 			break
 		}
 	}
-	if target.Name != DivisiIT && categoryShalat == SebelumAdzan {
+	if target.Name != DivisiIT && categoryShalat == models.SebelumAdzan {
 		payload["username"] = MyUsername
 	}
 
@@ -513,7 +497,7 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 				shalatTime.Format("15:04"),
 			)
 
-		} else if label == Dzuhur && now.Weekday() == time.Friday && (isBefore || isExactlyTime) {
+		} else if label == models.Dzuhur && now.Weekday() == time.Friday && (isBefore || isExactlyTime) {
 			// 🔥 KHUSUS JUMATAN (Laki-laki) - Range -30 s.d 0 menit
 			if isExactlyTime {
 				embedColor = 5814783 // Hijau
@@ -612,8 +596,8 @@ func checkAndSend(notificationTime time.Time, label string, shalatTime time.Time
 		isAdzanForQuote := isExactlyTime && label != "Dhuha"
 		quoteEmbed, categoryShalat := getPrayerQuoteEmbed(label, isBefore, isAdzanForQuote, isAfter)
 
-		if label == Dzuhur && now.Weekday() == time.Friday && (isBefore || isExactlyTime) {
-			categoryShalat = Jumat
+		if label == models.Dzuhur && now.Weekday() == time.Friday && (isBefore || isExactlyTime) {
+			categoryShalat = models.Jumat
 		}
 
 		disclaimerEmbed := models.DiscordEmbed{
@@ -769,19 +753,19 @@ func runTesting() {
 			label string
 			t     time.Time
 		}{
-			{Subuh, fajr},
-			{Dhuha, dhuhaStart}, // Tambahkan Dhuha di sini untuk testing
-			{Dzuhur, dhuhr},
-			{Ashar, asr},
-			{Maghrib, maghrib},
-			{Isya, isha},
+			{models.Subuh, fajr},
+			{models.Dhuha, dhuhaStart}, // Tambahkan Dhuha di sini untuk testing
+			{models.Dzuhur, dhuhr},
+			{models.Ashar, asr},
+			{models.Maghrib, maghrib},
+			{models.Isya, isha},
 		}
 
 		// 5. Loop di setiap waktu shalat dan offset
 		for _, prayer := range prayerTimes {
 			currentOffsets := offsetsMain
 			// Gunakan offsetsCaseSpecific untuk Dhuha
-			if prayer.label == Dhuha {
+			if prayer.label == models.Dhuha {
 				currentOffsets = offsetsCaseSpecific
 			}
 
@@ -884,18 +868,18 @@ func main() {
 			label string
 			t     time.Time
 		}{
-			{Subuh, fajr},
-			{Dhuha, dhuhaStart},
-			{Dzuhur, dhuhr},
-			{Ashar, asr},
-			{Maghrib, maghrib},
-			{Isya, isha},
+			{models.Subuh, fajr},
+			{models.Dhuha, dhuhaStart},
+			{models.Dzuhur, dhuhr},
+			{models.Ashar, asr},
+			{models.Maghrib, maghrib},
+			{models.Isya, isha},
 		}
 
 		// 5. Loop di setiap waktu shalat dan offset
 		for _, prayer := range prayerTimes {
 			currentOffsets := offsetsMain
-			if prayer.label == Dhuha {
+			if prayer.label == models.Dhuha {
 				currentOffsets = offsetsCaseSpecific
 			}
 
@@ -903,7 +887,7 @@ func main() {
 				notificationTime := prayer.t.Add(offset)
 
 				// KHUSUS Dhuha: Hanya kirim notifikasi saat offset adalah 0 menit
-				if prayer.label == Dhuha && offset.Minutes() != 0 {
+				if prayer.label == models.Dhuha && offset.Minutes() != 0 {
 					continue // Lewati pengingat sebelum dan sesudah Dhuha
 				}
 
