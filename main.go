@@ -393,8 +393,6 @@ func sendWebhook(label string, embeds []models.DiscordEmbed, target models.Webho
 		message = "📢📢📢 \n"
 	}
 	message += GetReminderByPrefix(categoryShalat)
-	message += " \n"
-	message += BuildShalatMessage(categoryShalat)
 	message += " \n\n\n"
 
 	mentions := target.Mentions
