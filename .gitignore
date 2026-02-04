@@ -1,0 +1,10 @@
+# Binary output
+pray-notify
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
