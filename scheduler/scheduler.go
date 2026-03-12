@@ -25,6 +25,10 @@ func Run(testingMode bool) {
 
 	// 1. Loop di setiap Webhook Target
 	for _, target := range config.WebhookTargets {
+		if target.IsDisable {
+			fmt.Printf("\n--- Target Webhook: %s (%s) DILEWATI (IsDisable: true) ---\n", target.Name, target.City)
+			continue
+		}
 		fmt.Printf("\n--- Memproses Target Webhook: %s (%s) ---\n", target.Name, target.City)
 
 		// 2. Load Timezone spesifik target

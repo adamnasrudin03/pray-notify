@@ -5,10 +5,11 @@ type WebhookTarget struct {
 	URL      string
 	Mentions string
 	// Data Lokasi Spesifik
-	Lat  float64
-	Lon  float64
-	Tz   string // Timezone string, misal "Asia/Jakarta"
-	City string // Nama kota/lokasi untuk ditampilkan di footer
+	Lat       float64
+	Lon       float64
+	Tz        string // Timezone string, misal "Asia/Jakarta"
+	City      string // Nama kota/lokasi untuk ditampilkan di footer
+	IsDisable bool
 }
 
 type DiscordEmbed struct {
