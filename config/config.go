@@ -48,4 +48,3 @@ func init() {
 		fmt.Println("⚠️ WARNING: WebhookTargets is empty. No notifications will be sent. Please check your WEBHOOK_TARGETS environment variable.")
 	}
 }
-
