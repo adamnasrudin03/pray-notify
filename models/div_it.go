@@ -31,12 +31,12 @@ var membersForceDivIT = []DiscordMember{
 // SDET
 var membersSdetDivIT = []DiscordMember{
 	{UserID: "<@812158172608593940>", Name: "Arifin"},
-	{UserID: "<@235784508291547136>", Name: "Hanif Afianto DN"},
-	{UserID: "<@1389437159496220694>", Name: "Adit Triyadi"},
-	{UserID: "<@369433975304880131>", Name: "Septian Ega"},
+	// {UserID: "<@235784508291547136>", Name: "Hanif Afianto DN"},
+	// {UserID: "<@1389437159496220694>", Name: "Adit Triyadi"},
+	// {UserID: "<@369433975304880131>", Name: "Septian Ega"},
 	{UserID: "<@1290943031653961731>", Name: "Andri Sukma"},
-	{UserID: "<@1301798033805283341>", Name: "Ayu Anriyani"},
-	{UserID: "<@395822450983567379>", Name: "Hendra R Gunawan"},
+	// {UserID: "<@1301798033805283341>", Name: "Ayu Anriyani"},
+	// {UserID: "<@395822450983567379>", Name: "Hendra R Gunawan"},
 }
 
 // PE
@@ -50,7 +50,7 @@ var membersPeDivIT = []DiscordMember{
 	{UserID: "<@1211558916857798727>", Name: "Hasan Ikhtiarta"},
 	{UserID: "<@1313024881989779526>", Name: "Ihsan Fajar Ramadhan"},
 	{UserID: "<@1199235749485224026>", Name: "Rohmat"},
-	{UserID: "<@978122157454405672>", Name: "Jafar Rohmadi"},
+	// {UserID: "<@978122157454405672>", Name: "Jafar Rohmadi"},
 }
 
 func GetMemberManagerDivIT() []DiscordMember {
