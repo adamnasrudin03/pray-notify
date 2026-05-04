@@ -34,3 +34,5 @@ jobs:
 
       - name: Run Prayer Notifier
         run: ./prayer-notifier
+        env:
+          WEBHOOK_TARGETS: ${{ secrets.WEBHOOK_TARGETS }}

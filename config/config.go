@@ -1,6 +1,11 @@
 package config
 
-import "github.com/adamnasrudin03/pray-notify/models"
+import (
+	"encoding/json"
+	"os"
+
+	"github.com/adamnasrudin03/pray-notify/models"
+)
 
 const (
 	MyUsername = "Adam Nasrudin (@adamnasrudin)"
@@ -10,31 +15,30 @@ const (
 )
 
 // WebhookTargets adalah daftar target webhook dengan lokasi spesifik
-var WebhookTargets = []models.WebhookTarget{
-	{
-		Name: DivisiIT,
-		URL:  "https://discord.com/api/webhooks/1443879495324008488/z-jzPBXv6vBvE45-QFrV-wwcIp8Qz9GtMw0bSQeKh1ltjHXZjcUPmjN3pMpS7Jg4yZJ0",
-		Lat:  models.DefaultLat,
-		Lon:  models.DefaultLon,
-		Tz:   models.DefaultTz,
-		City: models.DefaultCity,
-	},
-	{
-		Name:      MyChannel,
-		URL:       "https://discordapp.com/api/webhooks/1443512213842296904/EHX00Lvi8Hmqxzc1WsgJK9pyDsJzAmXWhexbqSsJnez8KSzaAHaBy_8UQIAgtRQyQEix",
-		Lat:       models.DefaultLat,
-		Lon:       models.DefaultLon,
-		Tz:        models.DefaultTz,
-		City:      models.DefaultCity,
-		IsDisable: true,
-	},
-	{
-		Name:     "Yusuf",
-		URL:      "https://discord.com/api/webhooks/1445697235231838208/UaQeKj2rS9tXdoDdB-SIMna_yfd2MKlPBlyOPWfUMIQlMvn0RM9CHjAOJ_XiB6dcygQx",
-		Lat:      models.DefaultLat,
-		Lon:      models.DefaultLon,
-		Tz:       models.DefaultTz,
-		City:     models.DefaultCity,
-		Mentions: "<@1211900014595407883>",
-	},
+var WebhookTargets = []models.WebhookTarget{}
+
+func init() {
+	// Overwrite WebhookTargets if set by environment variable (JSON string)
+	// Example: [{"Name":"Custom","URL":"https://...","Lat":-6.175,"Lon":106.827,"Tz":"Asia/Jakarta","City":"Jakarta"}]
+	if env := os.Getenv("WEBHOOK_TARGETS"); env != "" {
+		var targets []models.WebhookTarget
+		if err := json.Unmarshal([]byte(env), &targets); err == nil && len(targets) > 0 {
+			for i := range targets {
+				if targets[i].Lat == 0 {
+					targets[i].Lat = models.DefaultLat
+				}
+				if targets[i].Lon == 0 {
+					targets[i].Lon = models.DefaultLon
+				}
+				if targets[i].Tz == "" {
+					targets[i].Tz = models.DefaultTz
+				}
+				if targets[i].City == "" {
+					targets[i].City = models.DefaultCity
+				}
+			}
+			WebhookTargets = targets
+		}
+	}
 }
+
