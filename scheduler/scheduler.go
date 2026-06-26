@@ -10,20 +10,16 @@ import (
 	"github.com/hablullah/go-prayer"
 )
 
-// Run menjalankan scheduler utama untuk notifikasi shalat
-func Run(testingMode bool) {
-	// Definisikan offsets yang akan digunakan dalam mode testing, mirip dengan mode normal
-	offsetsMain := []time.Duration{}
+var offsetsMain []time.Duration
+
+func init() {
 	for m := -30; m <= 30; m += 5 {
 		offsetsMain = append(offsetsMain, time.Duration(m)*time.Minute)
 	}
+}
 
-	offsetsCaseSpecific := []time.Duration{}
-	for m := -30; m <= 30; m += 1 {
-		offsetsCaseSpecific = append(offsetsCaseSpecific, time.Duration(m)*time.Minute)
-	}
-
-	// 1. Loop di setiap Webhook Target
+// Run menjalankan scheduler utama untuk notifikasi shalat
+func Run(testingMode bool) {
 	for _, target := range config.WebhookTargets {
 		if target.IsDisable {
 			fmt.Printf("\n--- Target Webhook: %s (%s) DILEWATI (IsDisable: true) ---\n", target.Name, target.City)
@@ -31,7 +27,6 @@ func Run(testingMode bool) {
 		}
 		fmt.Printf("\n--- Memproses Target Webhook: %s (%s) ---\n", target.Name, target.City)
 
-		// 2. Load Timezone spesifik target
 		loc, err := time.LoadLocation(target.Tz)
 		if err != nil {
 			fmt.Printf("Error memuat zona waktu %s untuk %s: %v. Melewati target.\n", target.Tz, target.Name, err)
@@ -39,14 +34,13 @@ func Run(testingMode bool) {
 		}
 
 		today := time.Now().In(loc)
-		todayFormatted := today.Format("2006-01-02")
-		// 🛑 VALIDASI 1: Cek Hari Libur/Weekend untuk Webhook "Divisi IT"
-		if target.Name == config.DivisiIT && (today.Weekday() == time.Saturday || today.Weekday() == time.Sunday) {
-			fmt.Println("webhook DILEWATI: Divisi IT tidak aktif di akhir pekan (Sabtu/Minggu)")
+		if target.ShouldSkipWeekend(today.Weekday()) {
+			fmt.Printf("webhook DILEWATI: %s tidak aktif di akhir pekan (Sabtu/Minggu)\n", target.Name)
 			continue
 		}
 
-		// 3. Hitung Jadwal Shalat untuk Target ini
+		todayFormatted := today.Format("2006-01-02")
+
 		cfg := prayer.Config{
 			Latitude:           target.Lat,
 			Longitude:          target.Lon,
@@ -78,7 +72,6 @@ func Run(testingMode bool) {
 			continue
 		}
 
-		// 4. Ambil waktu shalat dalam zona waktu target
 		fajr := schedule.Fajr.In(loc)
 		sunrise := schedule.Sunrise.In(loc)
 		dhuhr := schedule.Zuhr.In(loc)
@@ -86,7 +79,6 @@ func Run(testingMode bool) {
 		maghrib := schedule.Maghrib.In(loc)
 		isha := schedule.Isha.In(loc)
 
-		// 🔥 HITUNG AWAL WAKTU DHUHA (18 menit setelah Sunrise)
 		dhuhaStart := sunrise.Add(18 * time.Minute)
 
 		prayerTimes := []struct {
@@ -101,22 +93,15 @@ func Run(testingMode bool) {
 			{models.Isya, isha},
 		}
 
-		// 5. Loop di setiap waktu shalat dan offset
 		for _, p := range prayerTimes {
-			currentOffsets := offsetsMain
 			if p.label == models.Dhuha {
-				currentOffsets = offsetsCaseSpecific
+				notification.CheckAndSend(p.t, p.label, p.t, 0, target, testingMode)
+				continue
 			}
 
-			for _, offset := range currentOffsets {
+			activeOffsets := notification.FilterActiveOffsets(p.t, today, offsetsMain, testingMode)
+			for _, offset := range activeOffsets {
 				notificationTime := p.t.Add(offset)
-
-				// KHUSUS Dhuha: Hanya kirim notifikasi saat offset adalah 0 menit
-				if p.label == models.Dhuha && offset.Minutes() != 0 {
-					continue // Lewati pengingat sebelum dan sesudah Dhuha
-				}
-
-				// ** Panggil checkAndSend dengan target Webhook saat ini **
 				notification.CheckAndSend(notificationTime, p.label, p.t, offset, target, testingMode)
 			}
 		}

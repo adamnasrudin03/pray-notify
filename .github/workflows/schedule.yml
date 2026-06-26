@@ -1,21 +1,16 @@
-name: Prayer Notification Cron
+# Dipicu cron-job.org via repository_dispatch.
+# https://console.cron-job.org → POST /repos/{owner}/{repo}/dispatches
+
+name: Prayer Notification
 
 on:
-  schedule:
-    # Action akan berjalan setiap 1 menit (*/1)
-    # Mulai dari 03:30 WIB (20:30 UTC) hingga 19:30 WIB (12:30 UTC).
-
-    # Bagian 1: 20:30 UTC - 23:59 UTC
-    - cron: "30-59/3 20,21,22,23 * * *"
-
-    # Bagian 2a: 00:00 UTC - 11:59 UTC
-    - cron: "*/1 0-11 * * *"
-
-    # Bagian 2b: 12:00 UTC - 12:30 UTC
-    - cron: "0-30/3 12 * * *"
-
+  repository_dispatch:
+    types: [pray-notify]
   workflow_dispatch:
-    # Memungkinkan eksekusi manual dari UI GitHub
+
+concurrency:
+  group: pray-notify
+  cancel-in-progress: false
 
 jobs:
   notify:

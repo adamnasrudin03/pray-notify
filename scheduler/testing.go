@@ -16,29 +16,21 @@ func RunTesting(testingMode bool) {
 		return
 	}
 
-	// Definisikan offsets yang akan digunakan dalam mode testing, mirip dengan mode normal
-	offsetsMain := []time.Duration{}
+	offsetsMainTest := []time.Duration{}
 	for m := -5; m <= 30; m += 5 {
-		offsetsMain = append(offsetsMain, time.Duration(m)*time.Minute)
-	}
-
-	offsetsCaseSpecific := []time.Duration{}
-	for m := -5; m <= 5; m += 1 {
-		offsetsCaseSpecific = append(offsetsCaseSpecific, time.Duration(m)*time.Minute)
+		offsetsMainTest = append(offsetsMainTest, time.Duration(m)*time.Minute)
 	}
 
 	fmt.Println("==================================================================================")
 	fmt.Printf("!!! MODE UJI COBA AKTIF: Semua notifikasi akan dialihkan ke Webhook Testing !!!\n")
 	fmt.Println("==================================================================================")
 
-	// Hanya loop pada target yang sama dengan MyChannel untuk mendapatkan jadwal shalat
 	for _, target := range config.WebhookTargets {
 		if target.Name != config.MyChannel {
 			continue
 		}
 		fmt.Printf("\n--- Memproses Target Webhook: %s (%s) ---\n", target.Name, target.City)
 
-		// 2. Load Timezone spesifik target
 		loc, err := time.LoadLocation(target.Tz)
 		if err != nil {
 			fmt.Printf("Error memuat zona waktu %s untuk %s: %v. Melewati target.\n", target.Tz, target.Name, err)
@@ -48,7 +40,6 @@ func RunTesting(testingMode bool) {
 		today := time.Now().In(loc)
 		todayFormatted := today.Format("2006-01-02")
 
-		// 3. Hitung Jadwal Shalat untuk Target ini
 		cfg := prayer.Config{
 			Latitude:           target.Lat,
 			Longitude:          target.Lon,
@@ -79,7 +70,6 @@ func RunTesting(testingMode bool) {
 			continue
 		}
 
-		// 4. Ambil waktu shalat dalam zona waktu target
 		fajr := schedule.Fajr.In(loc)
 		sunrise := schedule.Sunrise.In(loc)
 		dhuhr := schedule.Zuhr.In(loc)
@@ -87,7 +77,6 @@ func RunTesting(testingMode bool) {
 		maghrib := schedule.Maghrib.In(loc)
 		isha := schedule.Isha.In(loc)
 
-		// 🔥 HITUNG AWAL WAKTU DHUHA (18 menit setelah Sunrise)
 		dhuhaStart := sunrise.Add(18 * time.Minute)
 
 		prayerTimes := []struct {
@@ -95,29 +84,25 @@ func RunTesting(testingMode bool) {
 			t     time.Time
 		}{
 			{models.Subuh, fajr},
-			{models.Dhuha, dhuhaStart}, // Tambahkan Dhuha di sini untuk testing
+			{models.Dhuha, dhuhaStart},
 			{models.Dzuhur, dhuhr},
 			{models.Ashar, asr},
 			{models.Maghrib, maghrib},
 			{models.Isya, isha},
 		}
 
-		// 5. Loop di setiap waktu shalat dan offset
 		for _, p := range prayerTimes {
-			currentOffsets := offsetsMain
-			// Gunakan offsetsCaseSpecific untuk Dhuha
 			if p.label == models.Dhuha {
-				currentOffsets = offsetsCaseSpecific
+				notification.CheckAndSend(p.t, p.label, p.t, 0, target, testingMode)
+				time.Sleep(1 * time.Minute)
+				continue
 			}
 
-			for _, offset := range currentOffsets {
-				notificationTime := p.t.Add(offset)
-
+			for _, offset := range offsetsMainTest {
 				if offset.Minutes() != 0 {
 					continue
 				}
-
-				// jika testingMode=true dan target adalah target yang sedang diproses.
+				notificationTime := p.t.Add(offset)
 				notification.CheckAndSend(notificationTime, p.label, p.t, offset, target, testingMode)
 				time.Sleep(1 * time.Minute)
 			}

@@ -1,5 +1,10 @@
 # Binary output
 pray-notify
+prayer-notifier
+
+# Local config (jangan commit secret)
+**/targets.json
+!deploy/targets.example.json
 
 # IDE
 .idea/

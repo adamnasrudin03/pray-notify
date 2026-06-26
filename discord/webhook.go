@@ -7,8 +7,6 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/adamnasrudin03/pray-notify/config"
 	"github.com/adamnasrudin03/pray-notify/models"
@@ -21,69 +19,46 @@ type WebhookResult struct {
 	Error error
 }
 
+// BuildWebhookContent menyusun konten teks pesan webhook.
+func BuildWebhookContent(target models.WebhookTarget, label string, categoryShalat string) string {
+	message := target.ContentPrefix(label)
+	message += reminders.GetReminderByPrefix(categoryShalat)
+	message += " \n\n\n"
+	return message
+}
+
+// ResolveUsername menentukan nama bot yang ditampilkan di webhook.
+func ResolveUsername(target models.WebhookTarget, label string, categoryShalat string, testingMode bool) string {
+	if testingMode {
+		return config.Test
+	}
+	if target.Username != "" {
+		return target.Username
+	}
+	if target.UsernameBeforeAdzan != "" && categoryShalat == models.SebelumAdzan {
+		return target.UsernameBeforeAdzan
+	}
+	return "Reminder Adzan " + label
+}
+
 // SendWebhook mengirimkan pesan ke satu WebhookTarget
 func SendWebhook(label string, embeds []models.DiscordEmbed, target models.WebhookTarget, categoryShalat string, testingMode bool) WebhookResult {
 	result := WebhookResult{Name: target.Name}
-	now := time.Now()
 
-	// 🛑 VALIDASI 1: Cek Hari Libur/Weekend untuk Webhook "Divisi IT"
-	if target.Name == config.DivisiIT && (now.Weekday() == time.Saturday || now.Weekday() == time.Sunday) {
-		// Mengganti pesan error
-		result.Error = fmt.Errorf("webhook DILEWATI: Divisi IT tidak aktif di akhir pekan (Sabtu/Minggu)")
-		return result
-	}
-	isAdzanWork := map[string]bool{
-		models.Dzuhur:  true,
-		models.Ashar:   true,
-		models.Maghrib: true,
-	}
+	message := BuildWebhookContent(target, label, categoryShalat)
 
-	message := "📢 @here \n"
-	if !isAdzanWork[label] {
-		message = "📢📢📢 \n"
-	}
-	message += reminders.GetReminderByPrefix(categoryShalat)
-	message += " \n\n\n"
-
-	mentions := target.Mentions
-	if target.Name == config.DivisiIT && isAdzanWork[label] {
-		randomMembers := models.GetRandomMemberDivIT(7)
-		var m []string
-		for _, member := range randomMembers {
-			m = append(m, member.UserID)
-		}
-		mentions = strings.Join(m, " ")
-	}
-
-	if mentions != "" {
-		message += "Cc: " + mentions
-	}
-
-	// Payload utama Discord Webhook (Field-field ini tetap 'username', 'content', dll. karena itu adalah kunci JSON Discord)
 	payload := map[string]any{
 		"content": message,
 		"embeds":  embeds,
-		"tts":     true,
-	}
-
-	payload["avatar_url"] = models.RandomAvatarURL[rand.Intn(len(models.RandomAvatarURL))]
-	payload["username"] = "Reminder Adzan " + label
-
-	if target.Name == config.DivisiIT {
-		temp := models.GetRandomMemberDivIT(1)
-		for _, v := range temp {
-			payload["username"] = v.Name
-			break
-		}
-	}
-	if target.Name != config.DivisiIT && categoryShalat == models.SebelumAdzan {
-		payload["username"] = config.MyUsername
+		"tts":     target.EnableTextToSpeech(),
 	}
 
 	if testingMode {
-		payload["username"] = config.Test
 		payload["avatar_url"] = models.TestAvaatar
+	} else {
+		payload["avatar_url"] = models.RandomAvatarURL[rand.Intn(len(models.RandomAvatarURL))]
 	}
+	payload["username"] = ResolveUsername(target, label, categoryShalat, testingMode)
 
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -92,17 +67,21 @@ func SendWebhook(label string, embeds []models.DiscordEmbed, target models.Webho
 	}
 
 	resp, err := http.Post(target.URL, "application/json", bytes.NewBuffer(body))
-
-	bodyBytes, _ := io.ReadAll(resp.Body)
-	bodyString := string(bodyBytes)
-
 	if err != nil {
 		result.Error = fmt.Errorf("permintaan HTTP post gagal: %w", err)
-	} else {
-		if resp.StatusCode >= 300 {
-			result.Error = fmt.Errorf("kode status %d", resp.StatusCode)
-			fmt.Printf("Gagal mengirim webhook ke %s: %+v\n", target.Name, bodyString)
-		}
+		return result
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		result.Error = fmt.Errorf("gagal membaca respons HTTP: %w", readErr)
+		return result
+	}
+
+	if resp.StatusCode >= 300 {
+		result.Error = fmt.Errorf("kode status %d", resp.StatusCode)
+		fmt.Printf("Gagal mengirim webhook ke %s: %s\n", target.Name, string(bodyBytes))
 	}
 	return result
 }

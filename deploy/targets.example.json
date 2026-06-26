@@ -1,0 +1,12 @@
+[
+  {
+    "Name": "Divisi IT",
+    "URL": "https://discord.com/api/webhooks/REPLACE_ME",
+    "Lat": -6.1895,
+    "Lon": 106.7649,
+    "Tz": "Asia/Jakarta",
+    "City": "Kebon Jeruk, Jakarta Barat",
+    "SkipWeekends": true,
+    "MentionMode": "here"
+  }
+]
