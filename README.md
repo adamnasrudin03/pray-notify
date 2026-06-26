@@ -76,7 +76,7 @@ Buat **3 cronjob** dengan jadwal berbeda (window shalat 03:30–19:59 WIB):
 |-----|-----------------|-----------|
 | 1 | `30-59 3 * * *` | 03:30 – 03:59 |
 | 2 | `* 4-18 * * *` | 04:00 – 18:59 |
-| 3 | `* 19 * * *` | 19:00 – 19:59 (cover Isya +30 menit) |
+| 3 | `* 19 * * *` | 19:00 – 19:59 (cover Isya +10 menit) |
 
 > Detail langkah ada di [`deploy/cron-job.org.md`](deploy/cron-job.org.md)
 

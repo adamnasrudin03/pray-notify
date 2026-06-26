@@ -16,10 +16,7 @@ func RunTesting(testingMode bool) {
 		return
 	}
 
-	offsetsMainTest := []time.Duration{}
-	for m := -5; m <= 30; m += 5 {
-		offsetsMainTest = append(offsetsMainTest, time.Duration(m)*time.Minute)
-	}
+	offsetsMainTest := MainOffsets
 
 	fmt.Println("==================================================================================")
 	fmt.Printf("!!! MODE UJI COBA AKTIF: Semua notifikasi akan dialihkan ke Webhook Testing !!!\n")

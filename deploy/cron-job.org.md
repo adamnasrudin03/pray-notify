@@ -70,11 +70,11 @@ Duplikat job di atas dengan cron expression berbeda (3 job total):
 
 | Job name | Cron | Window WIB | Keterangan |
 |----------|------|------------|------------|
-| pray-notify-03 | `30-59 3 * * *` | 03:30–03:59 | Subuh -30 menit |
+| pray-notify-03 | `30-59 3 * * *` | 03:30–03:59 | Subuh -10 menit |
 | pray-notify-04-18 | `* 4-18 * * *` | 04:00–18:59 | Subuh s.d Maghrib |
-| pray-notify-19 | `* 19 * * *` | 19:00–19:59 | Isya + offset +30 menit |
+| pray-notify-19 | `* 19 * * *` | 19:00–19:59 | Isya + offset +10 menit |
 
-Job 3 memakai **seluruh jam 19** (bukan cuma sampai 19:30) agar pengingat **Isya +25/+30 menit** tidak terlewat — Isya di Jakarta bisa ~19:10–19:25, sehingga notifikasi terakhir bisa jatuh ~19:55.
+Job 3 memakai **seluruh jam 19** agar pengingat **Isya +10 menit** tidak terlewat.
 
 Di sisi code, window operasi juga dibatasi **03:30–19:59** (timezone target) + delivery window **90 detik** agar tidak spam meski cron jalan tiap menit.
 

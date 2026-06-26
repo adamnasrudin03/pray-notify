@@ -10,13 +10,7 @@ import (
 	"github.com/hablullah/go-prayer"
 )
 
-var offsetsMain []time.Duration
-
-func init() {
-	for m := -30; m <= 30; m += 5 {
-		offsetsMain = append(offsetsMain, time.Duration(m)*time.Minute)
-	}
-}
+var offsetsMain = MainOffsets
 
 type prayerSlot struct {
 	label string
