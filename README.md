@@ -7,7 +7,7 @@ Bot pengingat waktu shalat yang mengirim notifikasi ke Discord via webhook.
 ## Arsitektur
 
 ```
-cron-job.org (setiap menit, 03:30–19:30 WIB)
+cron-job.org (setiap menit, 03:30–19:59 WIB)
     │
     ▼ POST /repos/adamnasrudin03/pray-notify/dispatches
 GitHub Actions workflow
@@ -70,13 +70,13 @@ Isi per job:
 | `X-GitHub-Api-Version` | `2022-11-28` |
 | `Content-Type` | `application/json` |
 
-Buat **3 cronjob** dengan jadwal berbeda (window shalat 03:30–19:30 WIB):
+Buat **3 cronjob** dengan jadwal berbeda (window shalat 03:30–19:59 WIB):
 
 | Job | Cron expression | Jam (WIB) |
 |-----|-----------------|-----------|
 | 1 | `30-59 3 * * *` | 03:30 – 03:59 |
 | 2 | `* 4-18 * * *` | 04:00 – 18:59 |
-| 3 | `0-30 19 * * *` | 19:00 – 19:30 |
+| 3 | `* 19 * * *` | 19:00 – 19:59 (cover Isya +30 menit) |
 
 > Detail langkah ada di [`deploy/cron-job.org.md`](deploy/cron-job.org.md)
 
