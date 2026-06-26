@@ -3,6 +3,7 @@ pray-notify
 prayer-notifier
 
 # Local config (jangan commit secret)
+.env
 **/targets.json
 !deploy/targets.example.json
 

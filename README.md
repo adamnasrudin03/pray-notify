@@ -121,30 +121,42 @@ Secret GitHub berisi JSON array:
 | `UsernameBeforeAdzan` | personal untuk non-Divisi IT | Override nama bot sebelum adzan |
 | `IsDisable` | `false` | Nonaktifkan target |
 
-## Menjalankan lokal
+## Development lokal
+
+### Setup env (sekali)
 
 ```bash
-export WEBHOOK_TARGETS='[{"Name":"Test","URL":"https://discord.com/api/webhooks/..."}]'
+make env-sync        # salin .env.example → .env, targets.example.json → targets.json
+```
+
+Edit secret lokal:
+- `.env` — variabel environment
+- `deploy/targets.json` — webhook Discord (jangan di-commit)
+
+Tambah key baru di `.env.example`? Jalankan `make env-sync` lagi — key baru otomatis ditambahkan ke `.env` tanpa menimpa nilai lama.
+
+### Push secret ke GitHub
+
+```bash
+make secret-push     # deploy/targets.json → GitHub secret WEBHOOK_TARGETS
+```
+
+Butuh [gh CLI](https://cli.github.com/) sudah login (`gh auth login`).
+
+### Menjalankan
+
+```bash
+make run             # jalankan notifier
+make run-test        # mode uji coba (-test)
+make test            # unit test
+make build           # build binary
+```
+
+Manual tanpa Makefile:
+
+```bash
+export WEBHOOK_TARGETS_FILE=./deploy/targets.json
 go run main.go
-```
-
-Atau dari file:
-
-```bash
-export WEBHOOK_TARGETS_FILE=./deploy/targets.example.json
-go run main.go
-```
-
-### Mode uji coba
-
-```bash
-go run main.go -test
-```
-
-## Testing
-
-```bash
-go test ./...
 ```
 
 ## Kenapa cron-job.org + dispatch, bukan GH schedule?
