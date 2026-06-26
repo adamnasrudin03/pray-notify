@@ -16,6 +16,11 @@ GitHub Actions workflow
 Discord webhook
 ```
 
+## Jadwal notifikasi
+
+Per shalat fardhu: **5 pengingat** pada offset **-10, -5, 0, +5, +10 menit** dari waktu adzan.  
+Dhuha: **1×** saat waktu masuk. Total ~**26 pesan/hari** per channel.
+
 ## Setup
 
 ### 1. GitHub repo
