@@ -2,15 +2,19 @@ package notification
 
 import "time"
 
-const notificationWindow = 5 * time.Minute
+// maxDeliveryDelay: cron-job.org jalan tiap menit; window sempit mencegah kirim ulang notifikasi sama.
+// 90 detik = 1 siklus cron + toleransi startup GitHub Actions.
+const maxDeliveryDelay = 90 * time.Second
 
-// IsInNotificationWindow memeriksa apakah waktu notifikasi berada dalam window 5 menit terakhir.
+// IsInNotificationWindow memeriksa apakah waktu notifikasi siap dikirim pada run ini.
 func IsInNotificationWindow(notificationTime, now time.Time, testingMode bool) bool {
 	if testingMode {
 		return true
 	}
-	fiveMinutesAgo := now.Add(-notificationWindow)
-	return notificationTime.After(fiveMinutesAgo) && !notificationTime.After(now)
+	if now.Before(notificationTime) {
+		return false
+	}
+	return now.Sub(notificationTime) < maxDeliveryDelay
 }
 
 // FilterActiveOffsets memfilter offset yang waktu notifikasinya masuk dalam window aktif.

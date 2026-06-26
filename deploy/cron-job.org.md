@@ -76,6 +76,8 @@ Duplikat job di atas dengan cron expression berbeda (3 job total):
 
 Job 3 memakai **seluruh jam 19** (bukan cuma sampai 19:30) agar pengingat **Isya +25/+30 menit** tidak terlewat — Isya di Jakarta bisa ~19:10–19:25, sehingga notifikasi terakhir bisa jatuh ~19:55.
 
+Di sisi code, window operasi juga dibatasi **03:30–19:59** (timezone target) + delivery window **90 detik** agar tidak spam meski cron jalan tiap menit.
+
 ## Troubleshooting
 
 | Gejala | Solusi |

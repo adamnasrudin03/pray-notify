@@ -146,6 +146,16 @@ go test ./...
 
 GitHub Actions `on: schedule` sering telat karena antrian runner. `repository_dispatch` dipicu cron-job.org tepat waktu, workflow biasanya mulai dalam hitungan detik.
 
+### Guard di code (anti-spam)
+
+Selaras dengan jadwal cron-job.org, app punya 3 lapis proteksi:
+
+| Guard | Perilaku |
+|-------|----------|
+| **Window operasi** | Skip run di luar **03:30–19:59** (timezone per target) |
+| **Pending check** | Skip target jika tidak ada notifikasi dalam window aktif (jam 10:00 tidak proses Discord) |
+| **Delivery window 90 detik** | Setiap notifikasi max 1x per siklus cron (bukan 5 menit seperti dulu) |
+
 ## Perilaku mention
 
 - `@here` hanya di **content** webhook, untuk Dzuhur/Ashar/Maghrib

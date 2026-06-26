@@ -18,14 +18,23 @@ func init() {
 	}
 }
 
+type prayerSlot struct {
+	label string
+	t     time.Time
+}
+
 // Run menjalankan scheduler utama untuk notifikasi shalat
 func Run(testingMode bool) {
+	if !ShouldRunToday(testingMode) {
+		fmt.Println("⏩ DILEWATI: di luar window operasi cron (03:30–19:59 WIB)")
+		return
+	}
+
 	for _, target := range config.WebhookTargets {
 		if target.IsDisable {
 			fmt.Printf("\n--- Target Webhook: %s (%s) DILEWATI (IsDisable: true) ---\n", target.Name, target.City)
 			continue
 		}
-		fmt.Printf("\n--- Memproses Target Webhook: %s (%s) ---\n", target.Name, target.City)
 
 		loc, err := time.LoadLocation(target.Tz)
 		if err != nil {
@@ -33,13 +42,20 @@ func Run(testingMode bool) {
 			continue
 		}
 
-		today := time.Now().In(loc)
-		if target.ShouldSkipWeekend(today.Weekday()) {
+		now := time.Now().In(loc)
+		if !testingMode && !IsWithinOperatingWindow(now, loc) {
+			fmt.Printf("⏩ DILEWATI %s: di luar window operasi cron (03:30–19:59 %s)\n", target.Name, target.Tz)
+			continue
+		}
+
+		if target.ShouldSkipWeekend(now.Weekday()) {
 			fmt.Printf("webhook DILEWATI: %s tidak aktif di akhir pekan (Sabtu/Minggu)\n", target.Name)
 			continue
 		}
 
-		todayFormatted := today.Format("2006-01-02")
+		fmt.Printf("\n--- Memproses Target Webhook: %s (%s) ---\n", target.Name, target.City)
+
+		todayFormatted := now.Format("2006-01-02")
 
 		cfg := prayer.Config{
 			Latitude:           target.Lat,
@@ -50,7 +66,7 @@ func Run(testingMode bool) {
 			PreciseToSeconds:   true,
 		}
 
-		schedules, err := prayer.Calculate(cfg, today.Year())
+		schedules, err := prayer.Calculate(cfg, now.Year())
 		if err != nil {
 			fmt.Printf("Error menghitung jadwal shalat untuk %s: %v. Melewati target.\n", target.Name, err)
 			continue
@@ -81,10 +97,7 @@ func Run(testingMode bool) {
 
 		dhuhaStart := sunrise.Add(18 * time.Minute)
 
-		prayerTimes := []struct {
-			label string
-			t     time.Time
-		}{
+		prayerTimes := []prayerSlot{
 			{models.Subuh, fajr},
 			{models.Dhuha, dhuhaStart},
 			{models.Dzuhur, dhuhr},
@@ -93,17 +106,37 @@ func Run(testingMode bool) {
 			{models.Isya, isha},
 		}
 
+		if !testingMode && !hasPendingNotifications(prayerTimes, now, testingMode) {
+			fmt.Printf("⏩ DILEWATI %s: tidak ada notifikasi dalam window aktif\n", target.Name)
+			continue
+		}
+
 		for _, p := range prayerTimes {
 			if p.label == models.Dhuha {
 				notification.CheckAndSend(p.t, p.label, p.t, 0, target, testingMode)
 				continue
 			}
 
-			activeOffsets := notification.FilterActiveOffsets(p.t, today, offsetsMain, testingMode)
+			activeOffsets := notification.FilterActiveOffsets(p.t, now, offsetsMain, testingMode)
 			for _, offset := range activeOffsets {
 				notificationTime := p.t.Add(offset)
 				notification.CheckAndSend(notificationTime, p.label, p.t, offset, target, testingMode)
 			}
 		}
 	}
+}
+
+func hasPendingNotifications(prayerTimes []prayerSlot, now time.Time, testingMode bool) bool {
+	for _, p := range prayerTimes {
+		if p.label == models.Dhuha {
+			if notification.IsInNotificationWindow(p.t, now, testingMode) {
+				return true
+			}
+			continue
+		}
+		if len(notification.FilterActiveOffsets(p.t, now, offsetsMain, testingMode)) > 0 {
+			return true
+		}
+	}
+	return false
 }
