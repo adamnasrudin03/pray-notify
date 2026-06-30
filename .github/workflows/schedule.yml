@@ -1,20 +1,19 @@
-# Dipicu cron-job.org via repository_dispatch.
-# https://console.cron-job.org → POST /repos/{owner}/{repo}/dispatches
+# Manual test saja — JANGAN dipicu cron (hemat kuota GitHub Actions Free).
+# Production: cron-job.org → HTTP /notify (lihat cmd/serve & deploy/cron-job.org.md)
 
-name: Prayer Notification
+name: Prayer Notification (Manual)
 
 on:
-  repository_dispatch:
-    types: [pray-notify]
   workflow_dispatch:
 
 concurrency:
-  group: pray-notify
-  cancel-in-progress: false
+  group: pray-notify-manual
+  cancel-in-progress: true
 
 jobs:
   notify:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -23,6 +22,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.25.1"
+          cache: true
 
       - name: Build Go Program
         run: go build -o prayer-notifier main.go

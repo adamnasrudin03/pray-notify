@@ -1,4 +1,4 @@
-.PHONY: help env-sync env-check secret-push build run run-test test clean
+.PHONY: help env-sync env-check secret-push build build-serve run serve run-test test clean
 
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 SCRIPTS := $(ROOT)scripts
@@ -8,9 +8,11 @@ help:
 	@echo ""
 	@echo "  make env-sync      Salin .env.example & targets.example.json jika belum ada"
 	@echo "  make env-check     Cek file env lokal sudah ada"
-	@echo "  make secret-push   Push deploy/targets.json → GitHub secret WEBHOOK_TARGETS"
-	@echo "  make build         Build binary prayer-notifier"
-	@echo "  make run           Jalankan lokal (butuh .env)"
+	@echo "  make secret-push   Push deploy/targets.json → GitHub secret (manual test)"
+	@echo "  make build         Build binary prayer-notifier (CLI)"
+	@echo "  make build-serve   Build binary HTTP server (production)"
+	@echo "  make serve         Jalankan HTTP server untuk cron-job.org"
+	@echo "  make run           Jalankan one-shot (butuh .env)"
 	@echo "  make run-test      Jalankan mode uji coba (-test)"
 	@echo "  make test          go test ./..."
 	@echo "  make clean         Hapus binary build"
@@ -31,6 +33,12 @@ secret-push: env-check
 build:
 	go build -o prayer-notifier main.go
 
+build-serve:
+	go build -o serve cmd/serve/main.go
+
+serve: env-check build-serve
+	@set -a && . ./.env && set +a && ./serve
+
 run: env-check
 	@set -a && . ./.env && set +a && go run main.go
 
@@ -41,4 +49,4 @@ test:
 	go test ./...
 
 clean:
-	rm -f prayer-notifier pray-notify
+	rm -f prayer-notifier pray-notify serve

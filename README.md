@@ -2,92 +2,83 @@
 
 Bot pengingat waktu shalat yang mengirim notifikasi ke Discord via webhook.
 
-**Production:** [cron-job.org](https://cron-job.org) memicu GitHub Actions lewat API `repository_dispatch` — tanpa server sendiri.
+**Production:** [cron-job.org](https://cron-job.org) memanggil HTTP endpoint `/notify` — **bukan GitHub Actions** (hemat kuota Free).
 
 ## Arsitektur
 
 ```
 cron-job.org (setiap menit, 03:30–19:59 WIB)
     │
-    ▼ POST /repos/adamnasrudin03/pray-notify/dispatches
-GitHub Actions workflow
+    ▼ POST https://your-app.onrender.com/notify
+cmd/serve (Go HTTP)
     │
-    ▼ prayer-notifier
+    ▼ prayer-notifier logic
 Discord webhook
 ```
+
+> GitHub Actions (`schedule.yml`) hanya untuk **test manual**. Jangan pakai `repository_dispatch` dari cron — ~990 run/hari melebihi limit GitHub Free.
 
 ## Jadwal notifikasi
 
 Per shalat fardhu: **5 pengingat** pada offset **-10, -5, 0, +5, +10 menit** dari waktu adzan.  
 Dhuha: **1×** saat waktu masuk. Total ~**26 pesan/hari** per channel.
 
+## Setup production
+
+1. Deploy `cmd/serve` ke Render/Railway/VPS (lihat [`deploy/cron-job.org.md`](deploy/cron-job.org.md))
+2. Set env `WEBHOOK_TARGETS` + `CRON_SECRET` di platform
+3. Pasang cron-job.org → `POST /notify` dengan header `Authorization: Bearer <CRON_SECRET>`
+4. **Nonaktifkan** cron lama yang hit `api.github.com/.../dispatches`
+
 ## Setup
 
-### 1. GitHub repo
+### GitHub (opsional — test manual saja)
 
-1. Set secret **`WEBHOOK_TARGETS`** di repo → Settings → Secrets and variables → Actions
-2. Pastikan workflow `.github/workflows/schedule.yml` sudah di-push (listen event `pray-notify`)
+1. Secret **`WEBHOOK_TARGETS`** untuk workflow_dispatch manual
+2. Actions → **Prayer Notification (Manual)** → Run workflow
 
-### 2. GitHub Personal Access Token
+## Development lokal
 
-Buat PAT untuk cron-job.org:
-
-| Tipe | Permission |
-|------|------------|
-| Classic PAT | scope `repo` |
-| Fine-grained | Contents: **Read and write** |
-
-### 3. Test manual (opsional)
+### Setup env (sekali)
 
 ```bash
-curl -X POST \
-  -H "Accept: application/vnd.github+json" \
-  -H "Authorization: Bearer ghp_xxxxxxxx" \
-  -H "X-GitHub-Api-Version: 2022-11-28" \
-  -H "Content-Type: application/json" \
-  https://api.github.com/repos/adamnasrudin03/pray-notify/dispatches \
-  -d '{"event_type":"pray-notify"}'
+make env-sync        # salin .env.example → .env, targets.example.json → targets.json
 ```
 
-Sukses = HTTP **204**. Cek tab **Actions** di repo — workflow harus jalan.
+Edit secret lokal:
+- `.env` — variabel environment
+- `deploy/targets.json` — webhook Discord (jangan di-commit)
 
-### 4. Buat job di cron-job.org
+Tambah key baru di `.env.example`? Jalankan `make env-sync` lagi — key baru otomatis ditambahkan ke `.env` tanpa menimpa nilai lama.
 
-Login ke [cron-job.org](https://console.cron-job.org) → **Create cronjob**.
+### Push secret ke GitHub (manual test)
 
-Isi per job:
+```bash
+make secret-push     # deploy/targets.json → GitHub secret WEBHOOK_TARGETS
+```
 
-| Field | Nilai |
-|-------|-------|
-| **Title** | `pray-notify` (atau bebas) |
-| **URL** | `https://api.github.com/repos/adamnasrudin03/pray-notify/dispatches` |
-| **Schedule** | lihat tabel di bawah |
-| **Timezone** | `Asia/Jakarta` |
-| **Request method** | `POST` |
-| **Request body** | `{"event_type":"pray-notify"}` |
+Butuh [gh CLI](https://cli.github.com/) sudah login (`gh auth login`).
 
-**Headers** (tambahkan satu per satu):
+### Menjalankan
 
-| Header | Value |
-|--------|-------|
-| `Accept` | `application/vnd.github+json` |
-| `Authorization` | `Bearer ghp_xxxxxxxx` |
-| `X-GitHub-Api-Version` | `2022-11-28` |
-| `Content-Type` | `application/json` |
+```bash
+make serve           # HTTP server untuk production/cron-job.org
+make run             # one-shot (seperti cron)
+make run-test        # mode uji coba (-test)
+make test            # unit test
+make build           # build binary CLI
+```
 
-Buat **3 cronjob** dengan jadwal berbeda (window shalat 03:30–19:59 WIB):
+Manual tanpa Makefile:
 
-| Job | Cron expression | Jam (WIB) |
-|-----|-----------------|-----------|
-| 1 | `30-59 3 * * *` | 03:30 – 03:59 |
-| 2 | `* 4-18 * * *` | 04:00 – 18:59 |
-| 3 | `* 19 * * *` | 19:00 – 19:59 (cover Isya +10 menit) |
-
-> Detail langkah ada di [`deploy/cron-job.org.md`](deploy/cron-job.org.md)
+```bash
+export WEBHOOK_TARGETS_FILE=./deploy/targets.json
+go run main.go
+```
 
 ## Konfigurasi webhook (`WEBHOOK_TARGETS`)
 
-Secret GitHub berisi JSON array:
+JSON array di env service atau `deploy/targets.json`:
 
 ```json
 [
@@ -121,57 +112,21 @@ Secret GitHub berisi JSON array:
 | `UsernameBeforeAdzan` | personal untuk non-Divisi IT | Override nama bot sebelum adzan |
 | `IsDisable` | `false` | Nonaktifkan target |
 
-## Development lokal
+## Kenapa tidak pakai GitHub Actions untuk cron?
 
-### Setup env (sekali)
-
-```bash
-make env-sync        # salin .env.example → .env, targets.example.json → targets.json
-```
-
-Edit secret lokal:
-- `.env` — variabel environment
-- `deploy/targets.json` — webhook Discord (jangan di-commit)
-
-Tambah key baru di `.env.example`? Jalankan `make env-sync` lagi — key baru otomatis ditambahkan ke `.env` tanpa menimpa nilai lama.
-
-### Push secret ke GitHub
-
-```bash
-make secret-push     # deploy/targets.json → GitHub secret WEBHOOK_TARGETS
-```
-
-Butuh [gh CLI](https://cli.github.com/) sudah login (`gh auth login`).
-
-### Menjalankan
-
-```bash
-make run             # jalankan notifier
-make run-test        # mode uji coba (-test)
-make test            # unit test
-make build           # build binary
-```
-
-Manual tanpa Makefile:
-
-```bash
-export WEBHOOK_TARGETS_FILE=./deploy/targets.json
-go run main.go
-```
-
-## Kenapa cron-job.org + dispatch, bukan GH schedule?
-
-GitHub Actions `on: schedule` sering telat karena antrian runner. `repository_dispatch` dipicu cron-job.org tepat waktu, workflow biasanya mulai dalam hitungan detik.
+| | GitHub Actions + dispatch | cron-job.org + `/notify` |
+|--|---------------------------|--------------------------|
+| Run/hari | ~990 | ~990 (tapi di server sendiri) |
+| Kuota GitHub | Habis (~2000 min/bulan) | **0 menit** |
+| Latensi | Antrian runner | Langsung ke app |
 
 ### Guard di code (anti-spam)
-
-Selaras dengan jadwal cron-job.org, app punya 3 lapis proteksi:
 
 | Guard | Perilaku |
 |-------|----------|
 | **Window operasi** | Skip run di luar **03:30–19:59** (timezone per target) |
-| **Pending check** | Skip target jika tidak ada notifikasi dalam window aktif (jam 10:00 tidak proses Discord) |
-| **Delivery window 90 detik** | Setiap notifikasi max 1x per siklus cron (bukan 5 menit seperti dulu) |
+| **Pending check** | Skip target jika tidak ada notifikasi dalam window aktif |
+| **Delivery window 90 detik** | Setiap notifikasi max 1x per siklus cron |
 
 ## Perilaku mention
 
