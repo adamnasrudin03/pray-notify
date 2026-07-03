@@ -107,14 +107,14 @@ func Run(testingMode bool) {
 
 		for _, p := range prayerTimes {
 			if p.label == models.Dhuha {
-				notification.CheckAndSend(p.t, p.label, p.t, 0, target, testingMode)
+				notification.CheckAndSend(p.t, p.label, p.t, 0, target, testingMode, false)
 				continue
 			}
 
 			activeOffsets := notification.FilterActiveOffsets(p.t, now, offsetsMain, testingMode)
 			for _, offset := range activeOffsets {
 				notificationTime := p.t.Add(offset)
-				notification.CheckAndSend(notificationTime, p.label, p.t, offset, target, testingMode)
+				notification.CheckAndSend(notificationTime, p.label, p.t, offset, target, testingMode, false)
 			}
 		}
 	}

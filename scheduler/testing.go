@@ -90,7 +90,7 @@ func RunTesting(testingMode bool) {
 
 		for _, p := range prayerTimes {
 			if p.label == models.Dhuha {
-				notification.CheckAndSend(p.t, p.label, p.t, 0, target, testingMode)
+				notification.CheckAndSend(p.t, p.label, p.t, 0, target, testingMode, false)
 				time.Sleep(1 * time.Minute)
 				continue
 			}
@@ -100,7 +100,7 @@ func RunTesting(testingMode bool) {
 					continue
 				}
 				notificationTime := p.t.Add(offset)
-				notification.CheckAndSend(notificationTime, p.label, p.t, offset, target, testingMode)
+				notification.CheckAndSend(notificationTime, p.label, p.t, offset, target, testingMode, false)
 				time.Sleep(1 * time.Minute)
 			}
 		}

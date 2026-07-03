@@ -1,117 +1,111 @@
-# Setup cron-job.org untuk pray-notify
+# Setup cron-job.org — Opsi A (GitHub Actions + window loop)
 
-Production **tidak lagi** memicu GitHub Actions (`repository_dispatch`) karena ~990 run/hari melebihi kuota **GitHub Actions Free** (~2.000 menit/bulan).
+**6 hit/hari** ke GitHub `repository_dispatch`. Workflow **sleep** sampai tiap offset (−10 s.d +10), lalu kirim Discord.
 
-cron-job.org sekarang memanggil **HTTP endpoint** `/notify` dari service yang menjalankan binary (Render, Railway, VPS, dll.).
+> Repo disarankan **public** agar kuota Actions Free cukup (~120 menit/hari, bukan ~3.600).
 
 ## Arsitektur
 
 ```
-cron-job.org (tiap menit, 03:30–19:59 WIB)
+cron-job.org (6×/hari, perkiraan sebelum shalat)
     │
-    ▼ POST https://your-app.onrender.com/notify
-cmd/serve (Go HTTP)
+    ▼ POST .../dispatches  {"event_type":"pray-notify","client_payload":{"prayer":"ashar"}}
+GitHub Actions (~20 menit/job: sleep + kirim 5 offset)
     │
-    ▼ scheduler.Run()
+    ▼ prayer-notifier -prayer ashar
 Discord webhook
 ```
 
-GitHub Actions (`schedule.yml`) hanya untuk **test manual** via workflow_dispatch.
+## Prasyarat GitHub
 
-## Deploy service (contoh Render)
+1. Repo **public** (disarankan)
+2. Secret **`WEBHOOK_TARGETS`** di Settings → Secrets → Actions
+3. PAT untuk cron-job.org (scope `repo` atau Contents write)
 
-1. Buat **Web Service** dari repo ini
-2. **Build command:** `go build -o serve cmd/serve/main.go`
-3. **Start command:** `./serve`
-4. **Environment variables:**
-   - `WEBHOOK_TARGETS` — JSON array (sama seperti GitHub secret)
-   - `CRON_SECRET` — token acak untuk auth cron-job.org
-   - `PORT` — biasanya diset otomatis oleh platform
+## Nonaktifkan cron lama
 
-## Prasyarat cron-job.org
+Hapus/disable job yang:
+- Hit **tiap menit** (`* 4-18 * * *`, dll.)
 
-- URL service sudah live (`/health` → `ok`)
-- `CRON_SECRET` sudah diset di service
+## Buat 6 cronjob di cron-job.org
 
-## Langkah cron-job.org
+Timezone: **Asia/Jakarta**  
+Method: **POST**  
+URL: `https://api.github.com/repos/adamnasrudin03/pray-notify/dispatches`
 
-### 1. Buat cronjob
-
-1. Buka [console.cron-job.org](https://console.cron-job.org)
-2. **Cronjobs** → **Create cronjob**
-
-### 2. Tab Common
-
-| Field | Nilai |
-|-------|-------|
-| Title | `pray-notify` |
-| URL | `https://your-app.onrender.com/notify` |
-| Enable job | ✅ |
-
-### 3. Tab Schedule
-
-- **Timezone:** `Asia/Jakarta`
-- Buat **3 job** dengan cron:
+Headers:
 
 ```
-30-59 3 * * *
+Accept: application/vnd.github+json
+Authorization: Bearer ghp_xxxxxxxx
+X-GitHub-Api-Version: 2022-11-28
+Content-Type: application/json
 ```
 
+### Tabel cronjob
+
+| Job | Cron (WIB) | Body `client_payload.prayer` | Keterangan |
+|-----|------------|------------------------------|------------|
+| subuh | `15 4 * * *` | `subuh` | ~10 menit sebelum Subuh musim panas |
+| dhuha | `15 6 * * *` | `dhuha` | sebelum Dhuha |
+| dzuhur | `45 11 * * *` | `dzuhur` | sebelum Dzuhur |
+| ashar | `0 15 * * *` | `ashar` | sebelum Ashar |
+| maghrib | `45 17 * * *` | `maghrib` | sebelum Maghrib |
+| isya | `0 19 * * *` | `isya` | sebelum Isya |
+
+Cron di atas **perkiraan** (waktu shalat bergeser). Workflow menghitung jadwal **hari ini** lalu sleep sampai offset −10, −5, 0, +5, +10.
+
+### Body request (contoh Ashar)
+
+```json
+{
+  "event_type": "pray-notify",
+  "client_payload": {
+    "prayer": "ashar"
+  }
+}
 ```
-* 4-18 * * *
-```
 
-```
-* 19 * * *
-```
+Ganti `"ashar"` sesuai job.
 
-### 4. Tab Request
+## Test manual
 
-| Field | Nilai |
-|-------|-------|
-| Request method | `POST` |
+**GitHub UI:** Actions → Prayer Notification → Run workflow → pilih shalat.
 
-**Custom request headers:**
-
-```
-Authorization: Bearer your-cron-secret
-```
-
-### 5. Test
-
-**Run now** → HTTP **204**. Cek Discord channel.
-
-Test manual:
+**curl:**
 
 ```bash
 curl -X POST \
-  -H "Authorization: Bearer your-cron-secret" \
-  https://your-app.onrender.com/notify
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer ghp_xxx" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  -H "Content-Type: application/json" \
+  https://api.github.com/repos/adamnasrudin03/pray-notify/dispatches \
+  -d '{"event_type":"pray-notify","client_payload":{"prayer":"ashar"}}'
 ```
 
-## Nonaktifkan job lama (penting)
+**Lokal:**
 
-Hapus atau disable cron-job yang masih memanggil:
-
-```
-https://api.github.com/repos/adamnasrudin03/pray-notify/dispatches
+```bash
+make run-window-test PRAYER=ashar   # tanpa sleep
 ```
 
-Itu memicu GitHub Actions dan menghabiskan kuota.
+## Perilaku window
 
-## Window & anti-spam di code
+| Shalat | Offset | Durasi job (kira-kira) |
+|--------|--------|------------------------|
+| Fardhu | −10, −5, 0, +5, +10 | ~20 menit |
+| Dhuha | 0 saja | ~1 menit |
 
-| Guard | Perilaku |
-|-------|----------|
-| Window operasi | 03:30–19:59 (timezone target) |
-| Pending check | Skip jika tidak ada notifikasi aktif |
-| Delivery window | 90 detik per pengingat |
+**6 job × ~20 menit ≈ 120 menit/hari** (~3.600/bulan). Muat di repo **public**; tight untuk repo **private** (2.000 menit/bulan).
 
 ## Troubleshooting
 
 | Gejala | Solusi |
 |--------|--------|
-| HTTP 401 | `CRON_SECRET` tidak cocok |
-| HTTP 204 tapi tidak ada Discord | Cek `WEBHOOK_TARGETS` di service |
-| Service sleep (Render free) | Request pertama lambat; pertimbangkan paid tier atau platform lain |
-| Masih kena limit GitHub | Pastikan job dispatch ke GitHub sudah dihapus |
+| HTTP 401 | PAT salah/expired |
+| HTTP 422 | `event_type` harus `pray-notify` |
+| Workflow kosong prayer | Cek `client_payload.prayer` |
+| Notif terlewat | Cron terlalu telat; geser cron lebih awal |
+| Limit Actions | Pastikan repo public + cron lama dimatikan |
+| Job > 30 menit | Workflow timeout; cek jam shalat |

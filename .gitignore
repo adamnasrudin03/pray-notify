@@ -1,7 +1,6 @@
 # Binary output
 pray-notify
 prayer-notifier
-serve
 
 # Local config (jangan commit secret)
 .env

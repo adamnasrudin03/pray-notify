@@ -1,4 +1,4 @@
-.PHONY: help env-sync env-check secret-push build build-serve run serve run-test test clean
+.PHONY: help env-sync env-check secret-push build run run-window run-window-test run-test test clean
 
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 SCRIPTS := $(ROOT)scripts
@@ -6,16 +6,15 @@ SCRIPTS := $(ROOT)scripts
 help:
 	@echo "pray-notify — perintah tersedia:"
 	@echo ""
-	@echo "  make env-sync      Salin .env.example & targets.example.json jika belum ada"
-	@echo "  make env-check     Cek file env lokal sudah ada"
-	@echo "  make secret-push   Push deploy/targets.json → GitHub secret (manual test)"
-	@echo "  make build         Build binary prayer-notifier (CLI)"
-	@echo "  make build-serve   Build binary HTTP server (production)"
-	@echo "  make serve         Jalankan HTTP server untuk cron-job.org"
-	@echo "  make run           Jalankan one-shot (butuh .env)"
-	@echo "  make run-test      Jalankan mode uji coba (-test)"
-	@echo "  make test          go test ./..."
-	@echo "  make clean         Hapus binary build"
+	@echo "  make env-sync              Salin .env.example & targets.example.json"
+	@echo "  make env-check             Cek file env lokal"
+	@echo "  make secret-push           Push targets.json → GitHub secret"
+	@echo "  make build                 Build binary prayer-notifier"
+	@echo "  make run-window PRAYER=ashar       Window mode (sleep + kirim)"
+	@echo "  make run-window-test PRAYER=ashar  Window mode tanpa sleep"
+	@echo "  make run-test              Legacy test mode (-test)"
+	@echo "  make test                  go test ./..."
+	@echo "  make clean                 Hapus binary"
 
 env-sync:
 	@chmod +x $(SCRIPTS)/sync-env.sh
@@ -33,14 +32,13 @@ secret-push: env-check
 build:
 	go build -o prayer-notifier main.go
 
-build-serve:
-	go build -o serve cmd/serve/main.go
+run-window: env-check
+	@test -n "$(PRAYER)" || (echo "❌ Set PRAYER=subuh|dhuha|dzuhur|ashar|maghrib|isya" && exit 1)
+	@set -a && . ./.env && set +a && go run main.go -prayer "$(PRAYER)"
 
-serve: env-check build-serve
-	@set -a && . ./.env && set +a && ./serve
-
-run: env-check
-	@set -a && . ./.env && set +a && go run main.go
+run-window-test: env-check
+	@test -n "$(PRAYER)" || (echo "❌ Set PRAYER=subuh|dhuha|dzuhur|ashar|maghrib|isya" && exit 1)
+	@set -a && . ./.env && set +a && go run main.go -prayer "$(PRAYER)" -test
 
 run-test: env-check
 	@set -a && . ./.env && set +a && go run main.go -test

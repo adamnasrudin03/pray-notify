@@ -1,22 +1,45 @@
-# Manual test saja — JANGAN dipicu cron (hemat kuota GitHub Actions Free).
-# Production: cron-job.org → HTTP /notify (lihat cmd/serve & deploy/cron-job.org.md)
+# Production: cron-job.org 6×/hari → repository_dispatch → loop sleep per offset.
+# Repo disarankan PUBLIC agar kuota GitHub Actions Free cukup (~120 menit/hari).
 
-name: Prayer Notification (Manual)
+name: Prayer Notification
 
 on:
+  repository_dispatch:
+    types: [pray-notify]
   workflow_dispatch:
+    inputs:
+      prayer:
+        description: Shalat window
+        required: true
+        type: choice
+        options:
+          - subuh
+          - dhuha
+          - dzuhur
+          - ashar
+          - maghrib
+          - isya
 
 concurrency:
-  group: pray-notify-manual
-  cancel-in-progress: true
+  group: pray-notify-${{ github.event.client_payload.prayer || github.event.inputs.prayer }}
+  cancel-in-progress: false
 
 jobs:
   notify:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 30
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Validate prayer
+        env:
+          PRAYER: ${{ github.event.client_payload.prayer || github.event.inputs.prayer }}
+        run: |
+          case "$PRAYER" in
+            subuh|dhuha|dzuhur|ashar|maghrib|isya) echo "Prayer: $PRAYER" ;;
+            *) echo "PRAYER tidak valid: '$PRAYER'" && exit 1 ;;
+          esac
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -24,10 +47,11 @@ jobs:
           go-version: "1.25.1"
           cache: true
 
-      - name: Build Go Program
+      - name: Build
         run: go build -o prayer-notifier main.go
 
-      - name: Run Prayer Notifier
-        run: ./prayer-notifier
+      - name: Run Prayer Window
         env:
           WEBHOOK_TARGETS: ${{ secrets.WEBHOOK_TARGETS }}
+          PRAYER: ${{ github.event.client_payload.prayer || github.event.inputs.prayer }}
+        run: ./prayer-notifier -prayer "$PRAYER"

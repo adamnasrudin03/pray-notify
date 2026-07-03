@@ -2,9 +2,13 @@ package notification
 
 import "time"
 
-// maxDeliveryDelay: cron-job.org jalan tiap menit; window sempit mencegah kirim ulang notifikasi sama.
-// 90 detik = 1 siklus cron + toleransi startup GitHub Actions.
+// maxDeliveryDelay dipakai mode legacy Run() (polling). Mode window memakai sleep + forceSend.
 const maxDeliveryDelay = 90 * time.Second
+
+// MaxDeliveryDelay diekspor untuk scheduler window mode.
+func MaxDeliveryDelay() time.Duration {
+	return maxDeliveryDelay
+}
 
 // IsInNotificationWindow memeriksa apakah waktu notifikasi siap dikirim pada run ini.
 func IsInNotificationWindow(notificationTime, now time.Time, testingMode bool) bool {

@@ -8,8 +8,9 @@ import (
 	"github.com/adamnasrudin03/pray-notify/models"
 )
 
-// CheckAndSend memeriksa waktu dan mengirim notifikasi jika dalam window yang valid
-func CheckAndSend(notificationTime time.Time, label string, shalatTime time.Time, offsetDuration time.Duration, target models.WebhookTarget, testingMode bool) {
+// CheckAndSend memeriksa waktu dan mengirim notifikasi jika dalam window yang valid.
+// forceSend=true dipakai RunPrayerWindow setelah sleep terjadwal (lewati cek 90 detik).
+func CheckAndSend(notificationTime time.Time, label string, shalatTime time.Time, offsetDuration time.Duration, target models.WebhookTarget, testingMode bool, forceSend bool) {
 	loc, err := time.LoadLocation(target.Tz)
 	if err != nil {
 		fmt.Printf("Error memuat zona waktu target %s: %v\n", target.Tz, err)
@@ -29,7 +30,7 @@ func CheckAndSend(notificationTime time.Time, label string, shalatTime time.Time
 	isExactlyTime := absDuration.Minutes() < 1
 	isAfter := !isBefore && !isExactlyTime
 
-	if IsInNotificationWindow(notificationTime, now, testingMode) {
+	if testingMode || forceSend || IsInNotificationWindow(notificationTime, now, false) {
 
 		var mainTitle string
 		var mainDescription string
