@@ -24,6 +24,13 @@ func Run(testingMode bool) {
 		return
 	}
 
+	if !testingMode {
+		if err := config.ValidateTargets(config.WebhookTargets); err != nil {
+			fmt.Printf("❌ Konfigurasi webhook: %v\n", err)
+			return
+		}
+	}
+
 	for _, target := range config.WebhookTargets {
 		if target.IsDisable {
 			fmt.Printf("\n--- Target Webhook: %s (%s) DILEWATI (IsDisable: true) ---\n", target.Name, target.City)

@@ -23,6 +23,7 @@ env-sync:
 env-check:
 	@test -f .env || (echo "❌ .env belum ada. Jalankan: make env-sync" && exit 1)
 	@test -f deploy/targets.json || (echo "❌ deploy/targets.json belum ada. Jalankan: make env-sync" && exit 1)
+	@! grep -q 'REPLACE_ME' deploy/targets.json || (echo "❌ deploy/targets.json masih berisi REPLACE_ME — isi webhook Discord asli" && exit 1)
 	@echo "✅ env OK"
 
 secret-push: env-check
@@ -47,4 +48,4 @@ test:
 	go test ./...
 
 clean:
-	rm -f prayer-notifier pray-notify serve
+	rm -f prayer-notifier pray-notify

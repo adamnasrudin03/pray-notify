@@ -19,8 +19,10 @@ Discord webhook
 ## Prasyarat GitHub
 
 1. Repo **public** (disarankan)
-2. Secret **`WEBHOOK_TARGETS`** di Settings → Secrets → Actions
+2. Secret **`WEBHOOK_TARGETS`** — dari `deploy/targets.json` via `make secret-push`
 3. PAT untuk cron-job.org (scope `repo` atau Contents write)
+
+> `make env-check` gagal jika `deploy/targets.json` masih berisi `REPLACE_ME`.
 
 ## Nonaktifkan cron lama
 
@@ -104,6 +106,7 @@ make run-window-test PRAYER=ashar   # tanpa sleep
 | Gejala | Solusi |
 |--------|--------|
 | HTTP 401 | PAT salah/expired |
+| HTTP 405 Discord | URL webhook salah atau masih `REPLACE_ME` — cek `deploy/targets.json` |
 | HTTP 422 | `event_type` harus `pray-notify` |
 | Workflow kosong prayer | Cek `client_payload.prayer` |
 | Notif terlewat | Cron terlalu telat; geser cron lebih awal |

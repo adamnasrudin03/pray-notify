@@ -25,10 +25,11 @@ Total ~**26 pesan/hari** per channel, **6 workflow/hari**.
 
 ## Setup
 
-1. Secret **`WEBHOOK_TARGETS`** di GitHub
-2. Pasang **6 cronjob** di cron-job.org → lihat [`deploy/cron-job.org.md`](deploy/cron-job.org.md)
-3. **Nonaktifkan** cron hit tiap menit / dispatch lama
-4. Repo **public** (disarankan)
+1. `make env-sync` → edit **`deploy/targets.json`** (isi URL webhook Discord, bukan `REPLACE_ME`)
+2. `make secret-push` → sync ke GitHub secret **`WEBHOOK_TARGETS`**
+3. Pasang **6 cronjob** di cron-job.org → [`deploy/cron-job.org.md`](deploy/cron-job.org.md)
+4. **Nonaktifkan** cron hit tiap menit / dispatch lama
+5. Repo **public** (disarankan)
 
 ## Development lokal
 

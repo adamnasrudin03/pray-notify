@@ -48,6 +48,12 @@ func RunPrayerWindow(prayer string, testingMode bool) error {
 		return nil
 	}
 
+	if !testingMode {
+		if err := config.ValidateTargets(pluckTargets(plans)); err != nil {
+			return fmt.Errorf("konfigurasi webhook: %w", err)
+		}
+	}
+
 	fmt.Printf("\n=== Window shalat: %s (%d target) ===\n", prayer, len(plans))
 	for _, p := range plans {
 		fmt.Printf("  • %s (%s) adzan %s\n", p.target.Name, p.target.City, p.shalatTime.Format("15:04"))
@@ -176,4 +182,12 @@ func sleepUntil(until time.Time, testingMode bool) {
 		fmt.Printf("⏳ Menunggu sampai %s (%s)\n", until.Format("15:04:05"), d.Truncate(time.Second))
 		time.Sleep(d)
 	}
+}
+
+func pluckTargets(plans []targetPlan) []models.WebhookTarget {
+	targets := make([]models.WebhookTarget, len(plans))
+	for i, p := range plans {
+		targets[i] = p.target
+	}
+	return targets
 }
