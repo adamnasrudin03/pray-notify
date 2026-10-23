@@ -78,6 +78,7 @@ pray-notify/
 ├── main.go                 # Entry point (CLI + HTTP server)
 ├── Dockerfile              # Multi-stage build (~15MB)
 ├── render.yaml             # Render free tier config
+├── koyeb.yaml              # Koyeb free tier config
 ├── Makefile                # Build, test, deploy helpers
 ├── go.mod / go.sum
 ├── .env.example            # Template env
@@ -149,6 +150,12 @@ Format JSON array (set via env var `WEBHOOK_TARGETS`):
 | `WEBHOOK_TARGETS` | JSON array webhook (untuk Render execution) |
 | `PORT` | Auto-set to `8080` |
 
+### Koyeb Dashboard (Settings → Secrets)
+
+| Secret | Description |
+|--------|-------------|
+| `WEBHOOK_TARGETS` | JSON array webhook (untuk Koyeb execution) |
+
 ---
 
 ## 🐳 Docker & Render Deploy
@@ -170,6 +177,33 @@ make docker-run
 - Region: Singapore
 - Health check: `/healthz`
 - Start command: `./pray-notify -server -port=8080`
+
+---
+
+## 🐦 Koyeb Deploy (Free Tier, No Billing Card)
+
+```bash
+# 1. Push ke GitHub
+git push origin main
+
+# 2. Connect repo di https://app.koyeb.com
+#    - Create Web Service → GitHub → select repo
+#    - Koyeb auto-detect Dockerfile
+#    - Instance: nano (free: 512MB RAM, 0.1 vCPU)
+#    - Region: Singapore (sin)
+#    - Port: 8080 (HTTP)
+
+# 3. Set WEBHOOK_TARGETS secret di Koyeb Dashboard
+#    Settings → Secrets → Add: WEBHOOK_TARGETS = <JSON from deploy/targets.json>
+
+# 4. Auto-deploy on push to main (enabled by default)
+```
+
+**Koyeb Free Tier:**
+- 1 service, 512MB RAM, 0.1 vCPU
+- Scale to zero when idle
+- No billing card required
+- Singapore region available
 
 ---
 

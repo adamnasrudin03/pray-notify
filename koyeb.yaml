@@ -1,0 +1,59 @@
+# Koyeb Service Configuration for pray-notify
+# Deploy: push to main → Koyeb auto-deploys via GitHub integration
+# Free tier: 1 service, 512MB RAM, 0.1 vCPU, no billing card required
+
+service:
+  name: pray-notify
+  type: web
+  runtime: docker
+  dockerfile: ./Dockerfile
+  # Build args (optional)
+  # build:
+  #   dockerfile: ./Dockerfile
+  #   context: .
+
+  # Instance configuration
+  instance:
+    type: nano  # free tier: 512MB RAM, 0.1 vCPU
+    regions:
+      - sin  # Singapore - closest to Indonesia
+
+  # Health check
+  healthcheck:
+    path: /healthz
+    port: 8080
+    interval: 30s
+    timeout: 10s
+    retries: 3
+
+  # Environment variables
+  env:
+    - name: PORT
+      value: "8080"
+    - name: WEBHOOK_TARGETS
+      # Set as SECRET in Koyeb dashboard (Settings → Secrets)
+      # Value: JSON array from deploy/targets.json
+      secret: WEBHOOK_TARGETS
+    - name: WEBHOOK_TARGETS_FILE
+      value: "deploy/targets.json"
+
+  # Ports
+  ports:
+    - port: 8080
+      protocol: http
+      expose: true
+
+  # Auto-deploy on push to main
+  github:
+    branch: main
+    deploy_on_push: true
+
+  # Scaling (free tier: max 1 instance)
+  scaling:
+    min_instances: 0  # scale to zero when idle (free tier)
+    max_instances: 1
+
+  # Resource limits
+  resources:
+    cpu: 100  # 0.1 vCPU (100 millicpu)
+    memory: 512  # MB

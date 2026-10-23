@@ -1,4 +1,4 @@
-.PHONY: help env-sync env-check secret-push build run run-window run-window-test run-test test clean docker-build docker-run render-deploy
+.PHONY: help env-sync env-check secret-push build run run-window run-window-test run-test test clean docker-build docker-run render-deploy koyeb-deploy
 
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 SCRIPTS := $(ROOT)scripts
@@ -18,6 +18,7 @@ help:
 	@echo "  make docker-build          Build Docker image"
 	@echo "  make docker-run            Run Docker container locally"
 	@echo "  make render-deploy         Deploy ke Render (via Git push)"
+	@echo "  make koyeb-deploy          Deploy ke Koyeb (via Git push)"
 
 env-sync:
 	@chmod +x $(SCRIPTS)/sync-env.sh
@@ -69,6 +70,13 @@ render-deploy:
 	@echo "  3. Set WEBHOOK_TARGETS secret di Render dashboard"
 	@echo "  4. Tambah GitHub secrets: RENDER_URL, RENDER_API_TOKEN"
 
+koyeb-deploy:
+	@echo "🚀 Deploy ke Koyeb:"
+	@echo "  1. Push ke GitHub: git push origin main"
+	@echo "  2. Connect repo di https://app.koyeb.com"
+	@echo "  3. Koyeb auto-detect Dockerfile & deploy"
+	@echo "  4. Set WEBHOOK_TARGETS secret di Koyeb dashboard (Settings → Secrets)"
+	@echo "  5. Region: Singapore (sin) — closest to Indonesia"
 
 .PHONY: sync-main
 
