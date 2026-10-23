@@ -1,6 +1,6 @@
 module github.com/adamnasrudin03/pray-notify
 
-go 1.26
+go 1.27
 
 require github.com/hablullah/go-prayer v1.1.1
 

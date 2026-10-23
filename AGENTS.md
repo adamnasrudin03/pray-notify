@@ -9,7 +9,7 @@
 
 **pray-notify** — Bot pengingat waktu shalat ke Discord via webhook.
 
-- **Language**: Go 1.25+
+- **Language**: Go 1.27+
 - **Scheduler**: `github.com/hablullah/go-prayer` (Kemenag, Shafii)
 - **Deployment**: Dual-mode (GitHub Actions **atau** Render)
 - **Config**: JSON via `WEBHOOK_TARGETS` env var
