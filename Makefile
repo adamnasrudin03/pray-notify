@@ -1,4 +1,4 @@
-.PHONY: help env-sync env-check secret-push build run run-window run-window-test run-test test clean
+.PHONY: help env-sync env-check secret-push build run run-window run-window-test run-test test clean docker-build docker-run render-deploy
 
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 SCRIPTS := $(ROOT)scripts
@@ -15,6 +15,9 @@ help:
 	@echo "  make run-test              Legacy test mode (-test)"
 	@echo "  make test                  go test ./..."
 	@echo "  make clean                 Hapus binary"
+	@echo "  make docker-build          Build Docker image"
+	@echo "  make docker-run            Run Docker container locally"
+	@echo "  make render-deploy         Deploy ke Render (via Git push)"
 
 env-sync:
 	@chmod +x $(SCRIPTS)/sync-env.sh
@@ -49,3 +52,19 @@ test:
 
 clean:
 	rm -f prayer-notifier pray-notify
+
+docker-build:
+	docker build -t pray-notify .
+
+docker-run: docker-build
+	docker run --rm -p 8080:8080 \
+		-e WEBHOOK_TARGETS_FILE=/app/deploy/targets.json \
+		-v $(ROOT)deploy/targets.json:/app/deploy/targets.json:ro \
+		pray-notify -server -port=8080
+
+render-deploy:
+	@echo "🚀 Deploy ke Render:"
+	@echo "  1. Push ke GitHub: git push origin main"
+	@echo "  2. Render auto-deploy dari render.yaml"
+	@echo "  3. Set WEBHOOK_TARGETS secret di Render dashboard"
+	@echo "  4. Tambah GitHub secrets: RENDER_URL, RENDER_API_TOKEN"

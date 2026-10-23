@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: pray-notify
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # Free tier: 750 hours/month, sleeps after 15 min inactivity
+    plan: free
+    region: singapore  # closest to Indonesia
+    healthCheckPath: /healthz
+    startCommand: ./pray-notify -server -port=8080
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: WEBHOOK_TARGETS_FILE
+        value: deploy/targets.json
+      # Add your webhook targets as secret (JSON array)
+      # Example value: [{"Name":"Masjid A","URL":"https://discord.com/api/webhooks/...","City":"Jakarta","Lat":-6.2,"Lon":106.8,"Tz":"Asia/Jakarta"}]
+      - key: WEBHOOK_TARGETS
+        sync: false  # Set manually in Render dashboard as secret
+    # Auto deploy on push to main
+    autoDeploy: true
+    # Optional: custom domain (free on Render)
+    # domains:
+    #   - pray-notify.yourdomain.com
