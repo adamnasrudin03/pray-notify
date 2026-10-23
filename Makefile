@@ -68,3 +68,10 @@ render-deploy:
 	@echo "  2. Render auto-deploy dari render.yaml"
 	@echo "  3. Set WEBHOOK_TARGETS secret di Render dashboard"
 	@echo "  4. Tambah GitHub secrets: RENDER_URL, RENDER_API_TOKEN"
+
+
+.PHONY: sync-main
+
+sync-main:
+	git pull -r origin main
+	git push origin HEAD
