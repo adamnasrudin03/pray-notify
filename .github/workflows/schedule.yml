@@ -1,4 +1,4 @@
-# Production: cron-job.org 6×/hari → repository_dispatch → loop sleep per offset.
+# Production: cron-job.org 6×/hari → repository_dispatch → calls Render /run endpoint
 # Repo disarankan PUBLIC agar kuota GitHub Actions Free cukup (~120 menit/hari).
 
 name: Prayer Notification
@@ -25,13 +25,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  notify:
+  trigger-render:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
       - name: Validate prayer
         env:
           PRAYER: ${{ github.event.client_payload.prayer || github.event.inputs.prayer }}
@@ -41,17 +38,18 @@ jobs:
             *) echo "PRAYER tidak valid: '$PRAYER'" && exit 1 ;;
           esac
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.25.1"
-          cache: true
-
-      - name: Build
-        run: go build -o prayer-notifier main.go
-
-      - name: Run Prayer Window
+      - name: Trigger Render /run endpoint
         env:
-          WEBHOOK_TARGETS: ${{ secrets.WEBHOOK_TARGETS }}
+          RENDER_URL: ${{ secrets.RENDER_URL }}
           PRAYER: ${{ github.event.client_payload.prayer || github.event.inputs.prayer }}
-        run: ./prayer-notifier -prayer "$PRAYER"
+        run: |
+          URL="${RENDER_URL}/run?prayer=${PRAYER}"
+          echo "🚀 Triggering Render: $URL"
+          response=$(curl -X POST "$URL" -w "\nHTTP: %{http_code}" -sSf) || {
+            echo "⚠️ Trigger failed (service may be sleeping): $response"
+            exit 0  # Don't fail workflow - cron-job.org will retry
+          }
+          echo "✅ Response: $response"
+
+      - name: Log completion
+        run: echo "✅ Triggered Render for $PRAYER at $(date -u)"
